@@ -33,7 +33,8 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body)}
 a{color:var(--ice)}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:end}
+.hctl{display:grid;gap:6px;justify-items:end;text-align:right}
 h1{font:800 clamp(30px,5vw,50px)/1 var(--display);letter-spacing:.01em;margin:0;text-transform:uppercase;text-wrap:balance}
 h1 small{display:block;font:500 15px/1.4 var(--body);text-transform:none;color:var(--muted);letter-spacing:0;margin-top:6px}
 h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px}
@@ -41,7 +42,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .btn{font:600 15px var(--body);background:var(--ice);color:#fff;border:0;border-radius:10px;padding:10px 18px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
 .btn:hover{filter:brightness(1.08)} .btn:focus-visible,.play:focus-visible{outline:3px solid var(--ice2);outline-offset:2px}
 .btn[disabled]{opacity:.6;cursor:wait}
-.stamp{font:13px var(--mono);color:var(--muted)}
+.stamp{font:13px var(--mono);color:var(--muted);display:grid}.stamp span{white-space:nowrap}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
 /* Hero */
 .scene{position:relative;contain:strict;isolation:isolate;border-radius:18px;overflow:hidden;background:#0b1626;aspect-ratio:16/7.2;max-width:100%}
@@ -66,7 +67,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .card{display:grid;gap:14px}
 .card .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .card .name{font:700 21px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
-.card .alt{font:600 14px var(--mono);color:var(--muted)}
+.card .alt{font:600 14px var(--mono);color:var(--muted);white-space:nowrap}
 .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle}
 .next{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;min-height:118px;align-content:center;padding:16px 18px;border-radius:14px;background:var(--go-bg);border:1.5px solid var(--go-line)}
 .next .lbl{grid-column:1/-1;display:flex;align-items:center;gap:8px;font:700 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--go-fg)}
@@ -107,7 +108,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 /* Kalender */
 .calwrap{overflow-x:auto}
 .cal{display:grid;grid-template-columns:120px repeat(30,minmax(26px,1fr));gap:3px;min-width:960px;font-size:12px}
-.cal .lab{font:600 13px var(--body);display:flex;align-items:center}
+.cal .lab,.cal .corner{font:600 13px var(--body);display:flex;align-items:center;position:sticky;left:0;z-index:1;background:var(--surface);padding-right:6px}
 .cal .d{text-align:center;color:var(--muted);font:11px/1.25 var(--mono)}
 .cal .d.we{color:var(--fg);font-weight:600}
 .cal .c{height:36px;border-radius:5px;display:flex;align-items:center;justify-content:center;font:600 10px var(--mono)}
@@ -117,14 +118,30 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .scale i{display:inline-block;width:26px;height:12px;border-radius:3px;vertical-align:middle;margin-left:6px}
 .note{color:var(--muted);font-size:14px}.note p{max-width:85ch}.note b{color:var(--fg)}
 .err{color:var(--red);font-weight:600}
-@media (max-width:640px){.scene{aspect-ratio:4/3.4}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}.hudr{display:none}}
+@media (max-width:640px){
+  .wrap{gap:14px;padding-block:14px 32px}
+  header{grid-template-columns:1fr}
+  .hctl{grid-template-columns:auto 1fr;align-items:center;justify-items:start;text-align:left;gap:12px}
+  .scene{aspect-ratio:4/3.6;border-radius:14px}.hudr{display:none}.hud{font-size:12px;left:10px;top:10px}
+  .slider{grid-template-columns:auto 1fr;gap:8px 12px}.slider input{grid-column:1/-1;grid-row:2}.slider .t{justify-self:end}
+  .panel{padding:14px;border-radius:14px}
+  .next{grid-template-columns:1fr;min-height:0;gap:6px}.next .big{font-size:38px}
+  .stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}
+  .stat b{font-size:24px}
+  .stat .h2{white-space:normal;min-height:2.6em}
+  .stamp{font-size:12px}
+  .chartbox svg{min-width:920px}
+  .cal{grid-template-columns:88px repeat(30,30px);min-width:0}
+  .cal .lab{font-size:12px}
+  .corr .info{font-size:13px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Rettenbach Schneiradar<small>Sölden · Wann können die TechnoAlpin-Kanonen starten? Live-Prognose, abgeglichen mit den Webcam-Messungen.</small></h1>
-    <div style="display:grid;gap:6px;justify-items:end">
+    <div class="hctl">
       <button class="btn" id="refresh" type="button">↻ Aktualisieren</button>
       <span class="stamp" id="stamp">lade Daten …</span>
     </div>
@@ -218,7 +235,7 @@ let DATA=null, NOW=0;
 // Automatische Aktualisierung: alle 15 min, solange die Seite sichtbar ist
 const AUTO_MIN=15;let LAST=0,LOADING=false,userMoved=false;
 function updStamp(){if(!LAST)return;const min=Math.round((Date.now()-LAST)/60000);
-  document.getElementById('stamp').textContent='Stand '+new Date(LAST).toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})+' · '+(min<1?'gerade eben':'vor '+min+' min')+' · automatisch alle '+AUTO_MIN+' min'}
+  document.getElementById('stamp').innerHTML='<span>Stand '+new Date(LAST).toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})+' · '+(min<1?'gerade eben':'vor '+min+' min')+'</span><span>automatisch alle '+AUTO_MIN+' min</span>'}
 setInterval(()=>{if(!document.hidden&&LAST&&Date.now()-LAST>=AUTO_MIN*60e3)load();else updStamp()},60e3);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LAST&&Date.now()-LAST>=AUTO_MIN*60e3)load()});
 async function load(){
@@ -332,6 +349,8 @@ function renderCorr(){
     const b=d.biasTw;return `${s.short}: Messung <b>${Math.abs(b).toFixed(1).replace('.',',')} °C ${b>=0?'wärmer':'kälter'}</b> als Prognose`});
   document.getElementById('corrinfo').innerHTML=(CORR?'Korrektur aktiv · ':'Korrektur aus · ')+parts.join(' · ')+' (Feuchtkugel, Schnitt letzte 24 h)';
 }
+const TLW=()=>innerWidth<640?320:600;
+let tlBucket=TLW();addEventListener('resize',()=>{if(TLW()!==tlBucket){tlBucket=TLW();if(DATA)renderCards()}});
 function renderCards(){
   const sel=+document.getElementById('time').value;
   document.getElementById('cards').innerHTML=STATIONS.map(s=>{
@@ -346,7 +365,7 @@ function renderCards(){
           for(let k=0;k<30&&!hit;k++){const dd=new Date(first);dd.setDate(dd.getDate()+k);const kk=ymd(dd);const p=k<15&&pe[kk]!=null?pe[kk]:pg[kk];if(p!=null&&p>=.5)hit={dd,p}}
           return `<div class="next none"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span><span class="big">Keins in 10 Tagen</span><span class="det">${hit?`Laut Kalender ab ca. <b>${DAYS[hit.dd.getDay()]} ${hit.dd.getDate()}. ${MON[hit.dd.getMonth()]}</b> wahrscheinlich (<b>${Math.round(hit.p*100)} %</b>)`:'Auch im 30-Tage-Kalender kein Tag mit über 50 % Chance.'}</span></div>`})();
     // Zeitleiste ab jetzt (10 Tage)
-    const N=d.time.length-NOW,W=600,cw=W/N,COL=['--no','--warn','--mid','--good','--ok'];
+    const N=d.time.length-NOW,W=TLW(),cw=W/N,COL=['--no','--warn','--mid','--good','--ok'];
     let tl=`<svg viewBox="0 0 ${W} 78" role="img" aria-label="Zeitleiste 10 Tage ${s.short}">`;
     for(let k=0;k<N;k++){const v=d.mean[NOW+k];tl+=`<rect x="${(k*cw).toFixed(2)}" y="29" width="${(cw+.4).toFixed(2)}" height="24" fill="var(${COL[status(v)[2]]})"/>`}
     d.time.forEach((t,i)=>{if(i<NOW||t.slice(11,13)!=='00')return;const x=(i-NOW)*cw;
@@ -355,17 +374,15 @@ function renderCards(){
     const seen={};d.time.forEach((t,i)=>{if(i<NOW)return;const day=t.slice(0,10);if(seen[day])return;seen[day]=1;
       const a=Math.max(i,NOW),b=Math.min(d.time.length-1,d.time.findIndex(x=>x.slice(0,10)>day)-1<0?d.time.length-1:d.time.findIndex(x=>x.slice(0,10)>day)-1);
       if((b-a)<8)return;const x=((a+b+1)/2-NOW)*cw;const dd=new Date(day);const we=[0,6].includes(dd.getDay());
-      tl+=`<text x="${x.toFixed(1)}" y="72" text-anchor="middle" font-size="12.5" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
+      tl+=`<text x="${x.toFixed(1)}" y="72" text-anchor="middle" font-size="${W<500?11:12.5}" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
     // Fenster beschriften
     // Fenster mit max. 12 h Pause zu Abschnitten zusammenfassen
-    const groups=[];w.forEach(x=>{const g=groups[groups.length-1];if(g&&x.a-g.b<=12){g.b=x.b;g.h+=x.b-x.a+1}else groups.push({a:x.a,b:x.b,h:x.b-x.a+1})});
+    const groups=[];w.forEach(x=>{const g=groups[groups.length-1];if(g&&x.a-g.b<=12){g.b=x.b;g.h+=x.b-x.a+1;g.parts.push(x)}else groups.push({a:x.a,b:x.b,h:x.b-x.a+1,parts:[x]})});
     const rowEnd=[34,-1];
-    groups.forEach(g=>{const x0=(g.a-NOW)*cw,x1=(g.b+1-NOW)*cw;const hEnd=String((+d.time[g.b].slice(11,13)+1)%24).padStart(2,'0');const txt=g.b-g.a<3?`${d.time[g.a].slice(11,13)}h · ${g.h} h`:`${d.time[g.a].slice(11,13)}–${hEnd}h · ${g.h} h`;const tw=txt.length*6.4;
-      let row=x0>=rowEnd[0]?0:x0>=rowEnd[1]?1:0;const lx=Math.min(W-tw,x0);rowEnd[row]=lx+tw+6;
-      const ly=row?22:10,by=row?24:24;
-      tl+=`<path d="M${x0.toFixed(1)},27 v-3 h${Math.max(2,x1-x0).toFixed(1)} v3" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`;
-      if(row)tl+=`<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${ly+2}" y2="24" stroke="var(--ok)" stroke-width="1"/>`;
-      tl+=`<text x="${lx.toFixed(1)}" y="${row?ly:ly+8}" font-size="11" font-weight="700" fill="var(--ok)" font-family="JetBrains Mono,monospace">${txt}</text>`});
+    groups.forEach(g=>{const x0=(g.a-NOW)*cw,x1=(g.b+1-NOW)*cw;const txt=`${g.h} h`;const tw=txt.length*7;
+      let lx=Math.max(26,Math.min(W-tw,(x0+x1)/2-tw/2));let row=lx>=rowEnd[0]?0:lx>=rowEnd[1]?1:0;rowEnd[row]=lx+tw+6;
+      g.parts.forEach(p=>{const a=(p.a-NOW)*cw,b=(p.b+1-NOW)*cw;tl+=`<path d="M${a.toFixed(1)},27 v-3 h${Math.max(2,b-a).toFixed(1)} v3" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`});
+      tl+=`<text x="${lx.toFixed(1)}" y="${row?20:10}" font-size="12" font-weight="700" fill="var(--ok)" font-family="JetBrains Mono,monospace">${txt}</text>`});
     tl+=`<text x="0" y="18" font-size="11" font-weight="700" fill="var(--red)" font-family="Barlow,system-ui,sans-serif">jetzt</text><rect x="0" y="22" width="2.4" height="34" fill="var(--red)"/>`;
     if(sel>NOW)tl+=`<rect x="${((sel-NOW)*cw-1).toFixed(1)}" y="24" width="2.4" height="32" fill="var(--fg)" opacity=".7"/>`;
     tl+='</svg>';
@@ -442,11 +459,13 @@ function renderChart(){
     +(CORR?'<span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)"></i>ohne Korrektur</span>':'')
     +'<span><i style="background:var(--surface);border:1.5px solid var(--muted);width:9px;height:9px;border-radius:50%"></i>Messung Webcam</span><span><i style="background:var(--red)"></i>Startgrenze</span>';
   renderChart.X=X;
+  // auf schmalen Bildschirmen beim ersten Mal zu «jetzt» scrollen
+  const box=document.getElementById('chart');if(!renderChart.scrolled&&box.scrollWidth>box.clientWidth){box.scrollLeft=X(NOW)/W*box.scrollWidth-40;renderChart.scrolled=true}
 }
 function renderCal(){
   const first=new Date(ymd(new Date()));
   const days=[...Array(30)].map((_,k)=>{const d=new Date(first);d.setDate(d.getDate()+k);return d});
-  let h='<div></div>'+days.map((d,k)=>`<div class="d ${[0,6].includes(d.getDay())?'we':''}">${DAYS[d.getDay()]}<br>${d.getDate()}.${(k===0||d.getDate()===1)?'<br>'+MON[d.getMonth()]:''}</div>`).join('');
+  let h='<div class="corner"></div>'+days.map((d,k)=>`<div class="d ${[0,6].includes(d.getDay())?'we':''}">${DAYS[d.getDay()]}<br>${d.getDate()}.${(k===0||d.getDate()===1)?'<br>'+MON[d.getMonth()]:''}</div>`).join('');
   STATIONS.forEach(st=>{const d=DATA[st.id];
     const pe=dailyProb(d.ecm.time,d.ecmAdj),pg=dailyProb(d.gfs.time,d.gfsAdj);
     h+=`<div class="lab"><span class="swatch" style="background:var(${st.color})"></span>${st.short}</div>`;
@@ -506,7 +525,7 @@ const Scene=(()=>{
     [cv,off].forEach(c=>{c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)});cx.setTransform(dpr,0,0,dpr,0,0);ox.setTransform(dpr,0,0,dpr,0,0);
     yOf=m=>H*(.985-(m-2560)/(3560-2560)*.8);dirty=true;kick()}
   addEventListener('resize',resize);
-  const S=()=>Math.max(.5,Math.min(1,W/1100))*.76; // Massstab (bewusst klein, damit die Berge wirken)
+  const S=()=>Math.max(.64,Math.min(1,W/1100))*.76; // Massstab (bewusst klein, damit die Berge wirken)
 
   function layer(fn,top,bot,step,shade,snowLine,dl){
     const g=ox.createLinearGradient(0,yOf(3560),0,H);g.addColorStop(0,rgb(top));g.addColorStop(1,rgb(bot));
@@ -595,7 +614,7 @@ const Scene=(()=>{
     return {nz,ang,dir,led:{x:top.x+(tower?-9*s*dir:0),y:tower?top.y+14*s:gy-6*s}};
   }
   function label(p,title,val,color,dl,align){
-    const s=Math.max(.72,S()*1.15);ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;
+    const s=Math.max(.82,S()*1.15);ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;
     const tw1=ox.measureText(title).width;ox.font=`700 ${14*s}px "JetBrains Mono",monospace`;const tw2=val?ox.measureText(val).width:0;ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;const w=Math.max(tw1,tw2)+18*s,h=(val?40:24)*s;
     const lx=Math.max(6,Math.min(W-w-6,p.x-w/2+(align||0))),ly=p.y-h;
     ox.fillStyle='rgba(7,17,29,.8)';ox.beginPath();ox.roundRect(lx,ly,w,h,7*s);ox.fill();
