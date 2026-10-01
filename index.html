@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rettenbach Schneiradar</title>
+<meta name="description" content="Live-Prognose: Wann können die Schneekanonen am Rettenbachferner Sölden starten?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Bergszene als Hero, darunter Stationskarten, Diagramm, 35-Tage-Kalender. Alpines Nachtblau, Gletscher-Eis als Akzent. */
+:root{
+  --bg:#eef3f7; --surface:#ffffff; --fg:#0e1b2c; --muted:#5b6b7f; --line:#d8e1ea;
+  --ice:#1f7ae0; --ice2:#7cc4ff; --tal:#1f7ae0; --mittel:#e0631f;
+  --ok:#1f7ae0; --mid:#7cc4ff; --warn:#f2b705; --no:#d8e1ea; --nofg:#5b6b7f; --red:#d0342c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44;
+  --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
+  --ok:#4ea3ff; --mid:#2c5f8f; --warn:#d9a404; --no:#1c2e44; --nofg:#8fa3b8; --red:#ff5a4f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44;
+  --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
+  --ok:#4ea3ff; --mid:#2c5f8f; --warn:#d9a404; --no:#1c2e44; --nofg:#8fa3b8; --red:#ff5a4f; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+h1{font:800 clamp(30px,5vw,48px)/1 var(--display);letter-spacing:.01em;margin:0;text-transform:uppercase;text-wrap:balance}
+h1 small{display:block;font:500 15px/1.4 var(--body);text-transform:none;color:var(--muted);letter-spacing:0;margin-top:6px}
+h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 12px}
+.btn{font:600 15px var(--body);background:var(--ice);color:#fff;border:0;border-radius:10px;padding:10px 18px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.btn:hover{filter:brightness(1.08)} .btn:focus-visible{outline:3px solid var(--ice2);outline-offset:2px}
+.btn[disabled]{opacity:.6;cursor:wait}
+.stamp{font:13px var(--mono);color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+/* Hero */
+.scene{position:relative;border-radius:18px;overflow:hidden;background:#0b1626;aspect-ratio:16/7;max-width:100%}
+.scene canvas{display:block;width:100%;height:100%}
+.scene .hud{position:absolute;left:14px;top:12px;font:600 13px var(--mono);color:#e6eef7;background:#0008;padding:6px 10px;border-radius:8px}
+.slider{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-top:12px}
+.slider input{width:100%;accent-color:var(--ice)}
+.slider .t{font:600 14px var(--mono);white-space:nowrap}
+.play{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font:600 14px var(--body)}
+/* Verdict cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.card .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.card .name{font:700 20px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.card .alt{font:600 14px var(--mono);color:var(--muted)}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.now{display:flex;gap:22px;flex-wrap:wrap;margin:12px 0 10px}
+.now div{display:grid}
+.now b{font:700 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.now span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.verdict{font-size:16px;padding:10px 12px;border-radius:10px;background:var(--bg)}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font:600 13px var(--body);white-space:nowrap}
+.p-go{background:var(--ok);color:#fff}.p-mid{background:var(--mid);color:var(--fg)}.p-warn{background:var(--warn);color:#1a1300}.p-no{background:var(--no);color:var(--nofg)}
+/* chart */
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:640px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:20px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+/* calendar */
+.cal{display:grid;grid-template-columns:150px repeat(35,minmax(22px,1fr));gap:3px;min-width:980px;font-size:12px}
+.cal .lab{font:600 13px var(--body);display:flex;align-items:center}
+.cal .d{text-align:center;color:var(--muted);font:11px/1.2 var(--mono)}
+.cal .d.we{color:var(--fg);font-weight:600}
+.cal .c{height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;font:600 10px var(--mono);color:var(--fg)}
+.calwrap{overflow-x:auto}
+.scale{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.scale i{display:inline-block;width:26px;height:12px;border-radius:3px}
+.note{color:var(--muted);font-size:14px}.note p{max-width:80ch}
+.note b{color:var(--fg)}
+.err{color:var(--red);font-weight:600}
+@media (max-width:600px){.scene{aspect-ratio:4/3}.now b{font-size:28px}}
+@media (prefers-reduced-motion:reduce){.scene canvas{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Rettenbach Schneiradar<small>Sölden · Wann können die TechnoAlpin-Kanonen starten? Live-Prognose für Talstation und Mittelstation</small></h1>
+    <div style="display:grid;gap:6px;justify-items:end">
+      <button class="btn" id="refresh" type="button">↻ Aktualisieren</button>
+      <span class="stamp" id="stamp">lade Daten …</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="scene"><canvas id="scene" aria-label="Animierte Bergszene mit Schneekanonen"></canvas><div class="hud" id="hud">–</div></div>
+    <div class="slider">
+      <button class="play" id="play" type="button">▶ Abspielen</button>
+      <input type="range" id="time" min="0" max="383" value="0" aria-label="Zeitpunkt wählen">
+      <span class="t" id="tlabel">–</span>
+    </div>
+  </section>
+
+  <section class="cards" id="cards"></section>
+
+  <section class="panel">
+    <h2>Feuchtkugeltemperatur · 16 Tage</h2>
+    <p class="sub">Mittel aus ECMWF, ICON und GFS. Die Fläche zeigt die Spannweite des ECMWF-Ensembles (10–90 %). Unter der roten Linie können die Kanonen laufen.</p>
+    <div class="legend" id="legend"></div>
+    <div class="chartbox" id="chart"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Beschneiungs-Chance · 35 Tage</h2>
+    <p class="sub">Anteil der Ensemble-Varianten mit mindestens 3 Stunden Feuchtkugel ≤ −2,5 °C. Bis Tag 15 ECMWF (51 Varianten), danach GFS (31 Varianten). Je weiter weg, desto unsicherer.</p>
+    <div class="calwrap"><div class="cal" id="cal"></div></div>
+    <div class="scale"><span>Chance:</span><i style="background:var(--no)"></i>0 %<i style="background:var(--warn)"></i>1–29 %<i style="background:var(--mid)"></i>30–59 %<i style="background:var(--ok)"></i>≥ 60 %</div>
+  </section>
+
+  <section class="panel note">
+    <h2 style="color:var(--fg)">So liest du das</h2>
+    <p>Schneekanonen hängen an der <b>Feuchtkugeltemperatur</b>, nicht an der Lufttemperatur. Sie kombiniert Temperatur und Luftfeuchte: Trockene Luft kühlt den Wassertropfen durch Verdunstung, deshalb geht es bei trockener Luft schon knapp unter 0 °C. TechnoAlpin-Propellermaschinen (TF auf Türmen, TR am Boden) starten ab etwa <b>−2 bis −2,5 °C</b>, laufen gut ab <b>−4 °C</b> und optimal unter <b>−7 °C</b>.</p>
+    <p>Standorte: Rettenbachferner Talstation ca. 2'680 m und Schwarze Schneide Mittelstation ca. 3'000 m (Höhen angenommen). Die Modelle werden auf diese Höhe umgerechnet. Die Feuchtkugel wird mit dem tatsächlichen Luftdruck in der Höhe berechnet. Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Ob tatsächlich beschneit wird, entscheiden die Bergbahnen (Wasser, Bedarf, Weltcup-Vorbereitung). Live-Bild: <a href="https://soelden.panomax.com/rettenbach" target="_blank" rel="noopener">Panomax Rettenbach</a>.</p>
+  </section>
+</div>
+
+<script>
+const STATIONS=[
+  {id:'tal',name:'Rettenbach Talstation',short:'Talstation',alt:2680,lat:46.9375,lon:10.9290,color:'--tal',gun:'Turm'},
+  {id:'mittel',name:'Schwarze Schneide Mittelstation',short:'Mittelstation',alt:3000,lat:46.9300,lon:10.9180,color:'--mittel',gun:'Boden'},
+];
+const DET=[['ecmwf_ifs025','ECMWF'],['icon_seamless','ICON'],['gfs_seamless','GFS']];
+const START=-2.5, MARGIN=-2, GOOD=-4, OPT=-7;
+const DAYS=['So','Mo','Di','Mi','Do','Fr','Sa'];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Feuchtkugel per Psychrometer-Gleichung mit Luftdruck der Höhe (Bisektion)
+const es=t=>6.112*Math.exp(17.62*t/(243.12+t));
+const pAt=h=>1013.25*Math.pow(1-2.25577e-5*h,5.25588);
+function wetbulb(t,rh,p){
+  if(t==null||rh==null)return null;
+  const e=es(t)*Math.max(rh,1)/100;
+  let lo=-60,hi=t;
+  for(let i=0;i<40;i++){const tw=(lo+hi)/2;const f=es(tw)-0.00066*(1+0.00115*tw)*p*(t-tw)-e;if(f>0)hi=tw;else lo=tw}
+  return (lo+hi)/2;
+}
+async function getJSON(url){
+  for(let i=0;i<4;i++){
+    try{const r=await fetch(url);const j=await r.json();if(j.hourly)return j;}catch(e){}
+    await new Promise(r=>setTimeout(r,1200*(i+1)));
+  }
+  throw new Error('Open-Meteo antwortet nicht');
+}
+const base=s=>`latitude=${s.lat}&longitude=${s.lon}&elevation=${s.alt}&timezone=Europe%2FVienna`;
+
+let DATA=null;
+async function load(){
+  const btn=document.getElementById('refresh');btn.disabled=true;
+  document.getElementById('stamp').textContent='lade Daten …';
+  try{
+    const out={};
+    await Promise.all(STATIONS.map(async s=>{
+      const p=pAt(s.alt);
+      const [det,ecm,gfs]=await Promise.all([
+        getJSON(`https://api.open-meteo.com/v1/forecast?${base(s)}&hourly=temperature_2m,relative_humidity_2m,snowfall&forecast_days=16&models=${DET.map(d=>d[0]).join(',')}`),
+        getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=15&models=ecmwf_ifs025`),
+        getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=35&models=gfs05`),
+      ]);
+      const h=det.hourly, n=h.time.length;
+      const tw={},temp=[],mean=[],snow=[];
+      DET.forEach(([k])=>tw[k]=h.time.map((_,i)=>wetbulb(h['temperature_2m_'+k][i],h['relative_humidity_2m_'+k][i],p)));
+      for(let i=0;i<n;i++){
+        const v=DET.map(([k])=>tw[k][i]).filter(x=>x!=null);
+        mean.push(v.length?v.reduce((a,b)=>a+b)/v.length:null);
+        const tt=DET.map(([k])=>h['temperature_2m_'+k][i]).filter(x=>x!=null);
+        temp.push(tt.length?tt.reduce((a,b)=>a+b)/tt.length:null);
+        const sf=DET.map(([k])=>h['snowfall_'+k]?.[i]).filter(x=>x!=null);
+        snow.push(sf.length?sf.reduce((a,b)=>a+b)/sf.length:0);
+      }
+      const ens=j=>{const H=j.hourly;const mem=Object.keys(H).filter(k=>k.startsWith('temperature_2m'));
+        return {time:H.time,members:mem.map(k=>{const rk=k.replace('temperature','relative_humidity');return H.time.map((_,i)=>wetbulb(H[k][i],H[rk]?.[i],p))})}};
+      out[s.id]={time:h.time,tw,mean,temp,snow,ecm:ens(ecm),gfs:ens(gfs)};
+    }));
+    DATA=out;
+    const now=new Date();
+    document.getElementById('stamp').textContent='Stand '+now.toLocaleString('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const tt=DATA.tal.time; const nowIdx=Math.max(0,tt.findIndex(t=>new Date(t)>=new Date(now.getTime()-3600e3)));
+    const sl=document.getElementById('time');sl.max=tt.length-1;sl.value=nowIdx;
+    render();
+  }catch(e){
+    document.getElementById('stamp').innerHTML='<span class="err">Daten konnten nicht geladen werden. Bitte nochmals «Aktualisieren» drücken.</span>';
+  }
+  btn.disabled=false;
+}
+
+const fmtT=v=>v==null?'–':(v>0?'+':'')+v.toFixed(1).replace('.',',')+' °C';
+const dLabel=s=>{const d=new Date(s);return DAYS[d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1)+'.'};
+function status(tw){
+  if(tw==null)return['–','p-no'];
+  if(tw<=OPT)return['optimal','p-go'];
+  if(tw<=GOOD)return['läuft gut','p-go'];
+  if(tw<=START)return['Start möglich','p-mid'];
+  if(tw<=MARGIN)return['Grenzbereich','p-warn'];
+  return['zu warm','p-no'];
+}
+function windows(d){ // zusammenhängende Fenster (Modellmittel ≤ START)
+  const w=[];let cur=null;
+  d.mean.forEach((v,i)=>{if(v!=null&&v<=START){if(!cur)cur={a:i,b:i,min:v};cur.b=i;cur.min=Math.min(cur.min,v)}else if(cur){w.push(cur);cur=null}});
+  if(cur)w.push(cur);return w;
+}
+function dailyProb(ens,p){ // Tag -> Anteil Mitglieder mit >=3 h unter START
+  const byDay={};ens.time.forEach((t,i)=>{(byDay[t.slice(0,10)] ||= []).push(i)});
+  const res={};
+  for(const [day,idx] of Object.entries(byDay)){
+    let valid=0,hit=0;
+    ens.members.forEach(m=>{const vals=idx.map(i=>m[i]).filter(v=>v!=null);if(vals.length<4)return;valid++;
+      const step=24/vals.length; if(vals.filter(v=>v<=START).length*step>=3)hit++;});
+    if(valid)res[day]=hit/valid;
+  }
+  return res;
+}
+
+function render(){
+  if(!DATA)return;
+  renderCards();renderChart();renderCal();updateTime();
+}
+function renderCards(){
+  const i=+document.getElementById('time').value;
+  document.getElementById('cards').innerHTML=STATIONS.map(s=>{
+    const d=DATA[s.id];const w=windows(d);const st=status(d.mean[i]);
+    const nowI=Math.max(0,d.time.findIndex(t=>new Date(t)>=new Date(Date.now()-3600e3)));
+    const next=w.find(x=>x.b>=nowI);
+    let txt;
+    if(next){const hrs=w.filter(x=>x.b>=nowI).reduce((a,x)=>a+x.b-x.a+1,0);
+      txt=`Nächstes Fenster: <b>${dLabel(d.time[next.a])} ${d.time[next.a].slice(11,16)}</b> für ca. ${next.b-next.a+1} h (bis ${fmtT(next.min)}). Total in 16 Tagen: <b>${hrs} h</b>.`}
+    else txt='In den nächsten 16 Tagen <b>kein</b> sicheres Fenster im Modellmittel. Schau in den 35-Tage-Kalender.';
+    return `<div class="panel card"><div class="top"><span class="name"><span class="swatch" style="background:var(${s.color})"></span>${s.name}</span><span class="alt">${s.alt.toLocaleString('de-CH')} m</span></div>
+      <div class="now"><div><b>${fmtT(d.mean[i])}</b><span>Feuchtkugel</span></div><div><b>${fmtT(d.temp[i])}</b><span>Luft</span></div><div style="align-self:center"><span class="pill ${st[1]}">${st[0]}</span></div></div>
+      <div class="verdict">${txt}</div></div>`}).join('');
+}
+function renderChart(){
+  const W=1100,H=420,L=50,R=16,T=14,B=46,ymin=-14,ymax=8;
+  const d0=DATA.tal,n=d0.time.length;
+  const X=i=>L+(W-L-R)*i/(n-1),Y=v=>T+(H-T-B)*(ymax-Math.max(ymin,Math.min(ymax,v)))/(ymax-ymin);
+  const t0=new Date(d0.time[0]).getTime();
+  const idxOf=t=>(new Date(t).getTime()-t0)/3600e3;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Feuchtkugeltemperatur 16 Tage">`;
+  const zones=[[ymin,OPT,'--ok',.22],[OPT,GOOD,'--ok',.14],[GOOD,START,'--ice2',.18],[START,MARGIN,'--warn',.18]];
+  zones.forEach(([a,b,c,o])=>s+=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" fill="var(${c})" opacity="${o}"/>`);
+  for(let v=ymin;v<=ymax;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}°</text>`;
+  d0.time.forEach((t,i)=>{const h=+t.slice(11,13);
+    if(h===0)s+=`<line x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)"/>`;
+    if(h===12){const dd=new Date(t);s+=`<text x="${X(i)}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}">${DAYS[dd.getDay()]}</text><text x="${X(i)}" y="${H-B+33}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${dd.getDate()}.${dd.getMonth()+1}.</text>`}});
+  const path=(vals,xf=X)=>{let p='',pen=false;vals.forEach((v,i)=>{if(v==null){pen=false;return}p+=(pen?'L':'M')+xf(i).toFixed(1)+','+Y(v).toFixed(1)+' ';pen=true});return p};
+  STATIONS.forEach(st=>{const e=DATA[st.id].ecm;const lo=[],hi=[],xs=[];
+    e.time.forEach((t,i)=>{const v=e.members.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
+      xs.push(X(idxOf(t)));lo.push(Y(v[Math.floor(v.length*.1)]));hi.push(Y(v[Math.floor(v.length*.9)]))});
+    if(xs.length){let p='M'+xs.map((x,i)=>x.toFixed(1)+','+hi[i].toFixed(1)).join('L');p+='L'+xs.map((x,i)=>x.toFixed(1)+','+lo[i].toFixed(1)).reverse().join('L')+'Z';
+      s+=`<path d="${p}" fill="var(${st.color})" opacity=".13"/>`}});
+  STATIONS.forEach(st=>s+=`<path d="${path(DATA[st.id].mean)}" fill="none" stroke="var(${st.color})" stroke-width="2.4" stroke-linejoin="round"/>`);
+  s+=`<line x1="${L}" x2="${W-R}" y1="${Y(START)}" y2="${Y(START)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>`;
+  s+=`<text x="${W-R-6}" y="${Y(START)-6}" text-anchor="end" font-size="12" font-weight="600" fill="var(--red)">Startgrenze −2,5 °C</text>`;
+  [[ (OPT+ymin)/2,'optimal'],[(OPT+GOOD)/2,'gut'],[(GOOD+START)/2,'Start']].forEach(([v,l])=>s+=`<text x="${L+6}" y="${Y(v)+4}" font-size="11" fill="var(--muted)">${l}</text>`);
+  const i=+document.getElementById('time').value;
+  s+=`<line id="cursor" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--fg)" stroke-width="1.5" opacity=".6"/>`;
+  s+='</svg>';
+  document.getElementById('chart').innerHTML=s;
+  document.getElementById('legend').innerHTML=STATIONS.map(st=>`<span><i style="background:var(${st.color})"></i>${st.short} ${st.alt} m</span>`).join('')+'<span><i style="background:var(--red)"></i>Startgrenze</span>';
+  renderChart.X=X;
+}
+function renderCal(){
+  const first=new Date(DATA.tal.time[0].slice(0,10));
+  const days=[...Array(35)].map((_,k)=>{const d=new Date(first);d.setDate(d.getDate()+k);return d});
+  const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  let h='<div></div>'+days.map((d,k)=>`<div class="d ${[0,6].includes(d.getDay())?'we':''}">${DAYS[d.getDay()]}<br>${d.getDate()}.${(k===0||d.getDate()===1)?'<br>'+['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][d.getMonth()]:''}</div>`).join('');
+  STATIONS.forEach(st=>{
+    const pe=dailyProb(DATA[st.id].ecm),pg=dailyProb(DATA[st.id].gfs);
+    h+=`<div class="lab"><span class="swatch" style="background:var(${st.color})"></span>${st.short}</div>`;
+    days.forEach((d,k)=>{const kk=key(d);const p=k<14&&pe[kk]!=null?pe[kk]:pg[kk];
+      if(p==null){h+='<div class="c" style="background:var(--bg)">·</div>';return}
+      const c=p>=.6?'--ok':p>=.3?'--mid':p>0?'--warn':'--no';
+      const fg=p>=.6?'#fff':'var(--fg)';
+      h+=`<div class="c" style="background:var(${c});color:${fg};opacity:${k<14?1:.85}" title="${st.short} ${d.toLocaleDateString('de-CH')}: ${Math.round(p*100)} % (${k<14?'ECMWF':'GFS'})">${Math.round(p*100)}</div>`});
+  });
+  document.getElementById('cal').innerHTML=h;
+}
+function updateTime(){
+  if(!DATA)return;const i=+document.getElementById('time').value;const t=DATA.tal.time[i];
+  document.getElementById('tlabel').textContent=dLabel(t)+' '+t.slice(11,16);
+  const c=document.getElementById('cursor');if(c&&renderChart.X){c.setAttribute('x1',renderChart.X(i));c.setAttribute('x2',renderChart.X(i))}
+  renderCards();
+  document.getElementById('hud').textContent=dLabel(t)+' '+t.slice(11,16)+' Uhr';
+}
+document.getElementById('time').addEventListener('input',updateTime);
+document.getElementById('refresh').addEventListener('click',load);
+let playing=null;
+document.getElementById('play').addEventListener('click',e=>{
+  const sl=document.getElementById('time');
+  if(playing){clearInterval(playing);playing=null;e.target.textContent='▶ Abspielen';return}
+  e.target.textContent='❚❚ Pause';
+  playing=setInterval(()=>{sl.value=(+sl.value+1)%(+sl.max+1);updateTime()},120);
+});
+
+/* ---------- Bergszene ---------- */
+const cv=document.getElementById('scene'),cx=cv.getContext('2d');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let Wc=0,Hc=0,parts=[],flakes=[],stars=[];
+function resize(){const r=cv.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);Wc=r.width;Hc=r.height;cv.width=Wc*dpr;cv.height=Hc*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
+  stars=[...Array(70)].map(()=>({x:Math.random()*Wc,y:Math.random()*Hc*.45,r:Math.random()*1.2+.3}))}
+addEventListener('resize',resize);
+// Geländeprofil: x 0..1 -> Höhe in m
+const ridge=x=>{const pts=[[0,2950],[.08,3050],[.18,2860],[.3,2720],[.42,2670],[.55,2700],[.66,2860],[.76,3000],[.86,3180],[.93,3300],[1,3200]];
+  for(let k=1;k<pts.length;k++)if(x<=pts[k][0]){const [x0,y0]=pts[k-1],[x1,y1]=pts[k];const f=(x-x0)/(x1-x0);const s=f*f*(3-2*f);return y0+(y1-y0)*s}return 3200};
+const back=x=>3150+180*Math.sin(x*7.5+1)+120*Math.sin(x*17)+90*Math.cos(x*3.2);
+const yOf=m=>Hc*.95-(m-2450)/(3450-2450)*Hc*.85;
+const ST={tal:{x:.45},mittel:{x:.76}};
+function skyFor(hour){
+  const day=Math.max(0,Math.sin((hour-6.5)/13*Math.PI));
+  const lerp=(a,b,f)=>a.map((v,i)=>Math.round(v+(b[i]-v)*f));
+  return {top:lerp([6,12,26],[70,140,220],day),bot:lerp([24,40,70],[190,220,245],day),day};
+}
+function frame(ts){
+  if(!Wc)resize();
+  const i=DATA?+document.getElementById('time').value:0;
+  const hour=DATA?+DATA.tal.time[i].slice(11,13):22;
+  const sky=skyFor(hour);
+  const g=cx.createLinearGradient(0,0,0,Hc);g.addColorStop(0,`rgb(${sky.top})`);g.addColorStop(1,`rgb(${sky.bot})`);
+  cx.fillStyle=g;cx.fillRect(0,0,Wc,Hc);
+  if(sky.day<.3){cx.fillStyle=`rgba(255,255,255,${.8*(1-sky.day/.3)})`;stars.forEach(s=>{cx.beginPath();cx.arc(s.x,s.y,s.r,0,7);cx.fill()})}
+  // Hintergrundgipfel
+  cx.beginPath();cx.moveTo(0,Hc);for(let x=0;x<=1.001;x+=.01)cx.lineTo(x*Wc,yOf(back(x)));cx.lineTo(Wc,Hc);cx.closePath();
+  cx.fillStyle=sky.day>.3?'rgba(120,140,165,.7)':'rgba(40,55,80,.9)';cx.fill();
+  // Vordergrund mit Gletscher
+  cx.beginPath();cx.moveTo(0,Hc);for(let x=0;x<=1.001;x+=.005)cx.lineTo(x*Wc,yOf(ridge(x)));cx.lineTo(Wc,Hc);cx.closePath();
+  const gg=cx.createLinearGradient(0,yOf(3300),0,Hc);
+  const lit=.35+.65*sky.day;
+  gg.addColorStop(0,`rgba(${235*lit|0},${242*lit|0},${250*lit|0},1)`);gg.addColorStop(1,`rgba(${150*lit|0},${175*lit|0},${200*lit|0},1)`);
+  cx.fillStyle=gg;cx.fill();
+  // Fels-Akzente
+  cx.strokeStyle=`rgba(60,70,85,${.25+.2*lit})`;cx.lineWidth=1;
+  for(let k=0;k<14;k++){const x=(k*.071+.03)%1;const y=yOf(ridge(x));cx.beginPath();cx.moveTo(x*Wc,y+4);cx.lineTo(x*Wc+8,y+26);cx.stroke()}
+  // Seilbahn
+  const P=id=>({x:ST[id].x*Wc,y:yOf(ridge(ST[id].x))});
+  const a=P('tal'),b=P('mittel');const top={x:.93*Wc,y:yOf(ridge(.93))};
+  cx.strokeStyle=sky.day>.3?'#2a3646':'#8fa3b8';cx.lineWidth=1.2;
+  [[a,b],[b,top]].forEach(([p,q])=>{cx.beginPath();cx.moveTo(p.x,p.y-26);cx.quadraticCurveTo((p.x+q.x)/2,(p.y+q.y)/2-14,q.x,q.y-26);cx.stroke()});
+  const f=((ts||0)/9000)%1;const gx=a.x+(b.x-a.x)*f,gy=a.y-26+(b.y-a.y)*f-14*Math.sin(f*Math.PI)+6;
+  cx.fillStyle='#e0631f';cx.fillRect(gx-5,gy,10,9);
+  // Stationen + Kanonen
+  STATIONS.forEach(st=>{
+    const p=P(st.id);const tw=DATA?DATA[st.id].mean[i]:null;
+    cx.fillStyle=sky.day>.3?'#3b4656':'#202c3c';cx.fillRect(p.x-22,p.y-30,44,30);
+    cx.fillStyle=sky.day<.4?'#ffd479':'#9fb4c8';for(let k=0;k<3;k++)cx.fillRect(p.x-16+k*12,p.y-22,7,6);
+    // Kanone
+    const gxp=p.x-60,base=yOf(ridge((p.x-60)/Wc));const tower=st.gun==='Turm'?34:6;
+    cx.strokeStyle='#59636f';cx.lineWidth=3;cx.beginPath();cx.moveTo(gxp,base);cx.lineTo(gxp,base-tower);cx.stroke();
+    cx.save();cx.translate(gxp,base-tower);cx.rotate(-.35);cx.fillStyle='#f5f7fa';cx.fillRect(-4,-9,28,18);cx.fillStyle='#1f7ae0';cx.fillRect(-4,-9,6,18);
+    cx.strokeStyle='#59636f';cx.lineWidth=1;cx.beginPath();cx.arc(24,0,9,0,7);cx.stroke();cx.restore();
+    // Partikel
+    let rate=0;if(tw!=null){if(tw<=START)rate=Math.min(9,2+(START-tw)*1.4);else if(tw<=MARGIN)rate=.4}
+    if(!reduce)for(let k=0;k<rate;k++)if(Math.random()<rate/Math.ceil(rate))parts.push({x:gxp+22,y:base-tower-8,vx:2.2+Math.random()*1.6,vy:-1.1-Math.random()*1.2,life:0,max:70+Math.random()*60});
+    // Label
+    const st2=status(tw);cx.font='600 12px "JetBrains Mono",monospace';cx.textAlign='center';
+    const lbl=`${st.short} ${st.alt} m`,val=tw==null?'–':(tw>0?'+':'')+tw.toFixed(1)+' °C';
+    const lw=Math.max(cx.measureText(lbl).width,cx.measureText(val).width)+16;
+    cx.fillStyle='rgba(7,17,29,.78)';cx.beginPath();cx.roundRect(p.x-lw/2,p.y-80,lw,40,7);cx.fill();
+    cx.fillStyle='#e6eef7';cx.fillText(lbl,p.x,p.y-64);cx.fillStyle=tw!=null&&tw<=START?'#7cc4ff':tw!=null&&tw<=MARGIN?'#f2b705':'#ff8a8a';cx.fillText(val,p.x,p.y-48);
+  });
+  // Schneepartikel
+  cx.fillStyle='rgba(255,255,255,.9)';
+  parts=parts.filter(q=>{q.life++;q.vy+=.035;q.vx*=.992;q.x+=q.vx;q.y+=q.vy;const al=1-q.life/q.max;cx.globalAlpha=Math.max(0,al);cx.beginPath();cx.arc(q.x,q.y,1.6,0,7);cx.fill();return q.life<q.max&&q.y<Hc});
+  cx.globalAlpha=1;
+  // Naturschnee
+  const sf=DATA?DATA.tal.snow[i]:0;
+  if(!reduce&&sf>0){for(let k=0;k<Math.min(6,sf*4);k++)flakes.push({x:Math.random()*Wc,y:-5,v:.6+Math.random()*.8,w:Math.random()*6})}
+  cx.fillStyle='rgba(255,255,255,.85)';flakes=flakes.filter(fl=>{fl.y+=fl.v;fl.x+=Math.sin((fl.y+fl.w*30)/30)*.4;cx.beginPath();cx.arc(fl.x,fl.y,1.8,0,7);cx.fill();return fl.y<Hc});
+  if(!reduce||!frame.once){requestAnimationFrame(frame)}
+  frame.once=true;
+}
+resize();requestAnimationFrame(frame);
+load();
+</script>
+</body>
+</html>
