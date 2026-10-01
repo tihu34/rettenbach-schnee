@@ -599,7 +599,7 @@ const Scene=(()=>{
     STATIONS.forEach(st=>{const tw=DATA?DATA[st.id].mean[i]:null;
       const gx=st.id==='tal'?(SX.tal+.048)*W:(SX.mittel-.032)*W;
       const run=tw!=null&&tw<=START,marg=tw!=null&&!run&&tw<=MARGIN;
-      const g=st.id==='tal'?gun(gx,true,dl,run,1,-.2):gun(gx,true,dl,run,-1,-.12);G.guns.push({...g,run,marg,tw});
+      const g=st.id==='tal'?gun(gx,true,dl,run,1,-.42):gun(gx,true,dl,run,-1,-.12);G.guns.push({...g,run,marg,tw});
     });
     // Schnee unter laufender Kanone (Kegel)
     G.guns.forEach(g=>{if(!g.run)return;const gx=g.nz.x+g.dir*95*S(),gy=yOf(terrain(gx/W))+20*S();
