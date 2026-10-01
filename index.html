@@ -10,7 +10,7 @@
 <style>
 /* Layout: Bergszene als Hero, Messkorrektur-Leiste, Stationskarten mit Zeitleiste, Webcams, Diagramm, 30-Tage-Kalender. Alpines Nachtblau, Gletscher-Eis als Akzent. */
 :root{
-  --bg:#eef3f7; --surface:#ffffff; --fg:#0e1b2c; --muted:#5b6b7f; --line:#d8e1ea; --soft:#f4f7fa; --go-bg:#e2f5e7; --go-line:#a6dcb5; --go-fg:#0f5a2a; --fc-bg:#eaf3fc; --fc-line:#c2dcf5;
+  --bg:#eef3f7; --surface:#ffffff; --fg:#0e1b2c; --muted:#5b6b7f; --line:#d8e1ea; --soft:#f4f7fa; --go-bg:#e2f5e7; --go-line:#a6dcb5; --go-fg:#0f5a2a; --tr-red:#d0342c; --tr-yel:#f2b705; --tr-grn:#1f9d55; --fc-bg:#eaf3fc; --fc-line:#c2dcf5;
   --ice:#1f7ae0; --ice2:#7cc4ff; --tal:#1f7ae0; --mittel:#e0631f;
   --ok:#1556a8; --good:#2f86d6; --mid:#8cc3f0; --warn:#f2b705; --no:#dfe6ed; --nofg:#5b6b7f; --red:#d0342c;
   --c0:#e6ebf0; --c1:#d6e7f6; --c2:#aed0ef; --c3:#73b0e4; --c4:#2f80cc; --c5:#0f4a8f; --hatch:rgba(255,255,255,.45);
@@ -19,12 +19,12 @@
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --fc-bg:#0e2238; --fc-line:#1f4468;
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --tr-red:#e5483f; --tr-yel:#d9a404; --tr-grn:#2fb36a; --fc-bg:#0e2238; --fc-line:#1f4468;
   --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
   --ok:#7cc0ff; --good:#4ea3ff; --mid:#2b5d8c; --warn:#d9a404; --no:#1a2b40; --nofg:#8fa3b8; --red:#ff5a4f;
   --c0:#14243a; --c1:#173252; --c2:#1d4673; --c3:#2563a0; --c4:#3b8ad6; --c5:#8cc8ff; --hatch:rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --fc-bg:#0e2238; --fc-line:#1f4468;
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --tr-red:#e5483f; --tr-yel:#d9a404; --tr-grn:#2fb36a; --fc-bg:#0e2238; --fc-line:#1f4468;
   --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
   --ok:#7cc0ff; --good:#4ea3ff; --mid:#2b5d8c; --warn:#d9a404; --no:#1a2b40; --nofg:#8fa3b8; --red:#ff5a4f;
   --c0:#14243a; --c1:#173252; --c2:#1d4673; --c3:#2563a0; --c4:#3b8ad6; --c5:#8cc8ff; --hatch:rgba(0,0,0,.35); color-scheme:dark}
@@ -91,6 +91,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .pill{display:inline-block;padding:2px 10px;border-radius:99px;font:600 12px var(--body);white-space:nowrap;justify-self:start}
 .pill.p-ok{background:var(--ok);color:#fff}.pill.p-good{background:var(--good);color:#fff}.pill.p-mid{background:var(--mid);color:var(--fg)}.pill.p-warn{background:var(--warn);color:#1a1300}.pill.p-no{background:var(--no);color:var(--nofg)}
 .stat .pill{margin-top:2px}
+.pill.tr-red{background:var(--tr-red);color:#fff}.pill.tr-yel{background:var(--tr-yel);color:#1a1300}.pill.tr-grn{background:var(--tr-grn);color:#fff}
 /* Webcams */
 .cams{display:grid;gap:18px}
 .cam{display:grid;gap:8px;min-width:0}
@@ -323,6 +324,7 @@ function renderCards(){
   document.getElementById('cards').innerHTML=STATIONS.map(s=>{
     const d=DATA[s.id];const w=windows(d);const next=w[0];
     const total=w.reduce((a,x)=>a+x.b-x.a+1,0);
+    const marg=d.mean.filter((v,i)=>i>=NOW&&v!=null&&v>START&&v<=MARGIN).length;
     const flake='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7M9 4l3 2 3-2M9 20l3-2 3 2"/></svg>';
     const nextHtml=next?`<div class="next"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span>
         <span class="big">${dLabel(d.time[next.a])}</span>
@@ -332,35 +334,41 @@ function renderCards(){
           return `<div class="next none"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span><span class="big">Keins in 10 Tagen</span><span class="det">${hit?`Laut Kalender ab ca. <b>${DAYS[hit.dd.getDay()]} ${hit.dd.getDate()}. ${MON[hit.dd.getMonth()]}</b> wahrscheinlich (<b>${Math.round(hit.p*100)} %</b>)`:'Auch im 30-Tage-Kalender kein Tag mit über 50 % Chance.'}</span></div>`})();
     // Zeitleiste ab jetzt (10 Tage)
     const N=d.time.length-NOW,W=600,cw=W/N,COL=['--no','--warn','--mid','--good','--ok'];
-    let tl=`<svg viewBox="0 0 ${W} 66" role="img" aria-label="Zeitleiste 10 Tage ${s.short}">`;
-    for(let k=0;k<N;k++){const v=d.mean[NOW+k];tl+=`<rect x="${(k*cw).toFixed(2)}" y="17" width="${(cw+.4).toFixed(2)}" height="24" fill="var(${COL[status(v)[2]]})"/>`}
+    let tl=`<svg viewBox="0 0 ${W} 78" role="img" aria-label="Zeitleiste 10 Tage ${s.short}">`;
+    for(let k=0;k<N;k++){const v=d.mean[NOW+k];tl+=`<rect x="${(k*cw).toFixed(2)}" y="29" width="${(cw+.4).toFixed(2)}" height="24" fill="var(${COL[status(v)[2]]})"/>`}
     d.time.forEach((t,i)=>{if(i<NOW||t.slice(11,13)!=='00')return;const x=(i-NOW)*cw;
-      tl+=`<line x1="${x}" x2="${x}" y1="17" y2="46" stroke="var(--muted)" stroke-width=".8" opacity=".6"/>`});
+      tl+=`<line x1="${x}" x2="${x}" y1="29" y2="58" stroke="var(--muted)" stroke-width=".8" opacity=".6"/>`});
     // Tagesbeschriftung mittig
     const seen={};d.time.forEach((t,i)=>{if(i<NOW)return;const day=t.slice(0,10);if(seen[day])return;seen[day]=1;
       const a=Math.max(i,NOW),b=Math.min(d.time.length-1,d.time.findIndex(x=>x.slice(0,10)>day)-1<0?d.time.length-1:d.time.findIndex(x=>x.slice(0,10)>day)-1);
       if((b-a)<8)return;const x=((a+b+1)/2-NOW)*cw;const dd=new Date(day);const we=[0,6].includes(dd.getDay());
-      tl+=`<text x="${x.toFixed(1)}" y="60" text-anchor="middle" font-size="12.5" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
+      tl+=`<text x="${x.toFixed(1)}" y="72" text-anchor="middle" font-size="12.5" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
     // Fenster beschriften
-    let lastLbl=40;
-    w.forEach(x=>{const px=(x.a-NOW)*cw;tl+=`<path d="M${px.toFixed(1)},15 v-4 h${Math.max(2,(x.b-x.a+1)*cw).toFixed(1)} v4" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`;
-      if(px-lastLbl<30)return;lastLbl=px;
-      tl+=`<text x="${Math.min(W-24,px).toFixed(1)}" y="9" font-size="11" font-weight="700" fill="var(--ok)" font-family="JetBrains Mono,monospace">${d.time[x.a].slice(11,13)}h</text>`});
-    tl+=`<text x="0" y="9" font-size="11" font-weight="700" fill="var(--red)" font-family="Barlow,system-ui,sans-serif">jetzt</text><rect x="0" y="12" width="2.4" height="32" fill="var(--red)"/>`;
-    if(sel>NOW)tl+=`<rect x="${((sel-NOW)*cw-1).toFixed(1)}" y="12" width="2.4" height="32" fill="var(--fg)" opacity=".7"/>`;
+    // Fenster mit < 6 h Pause zu Abschnitten zusammenfassen
+    const groups=[];w.forEach(x=>{const g=groups[groups.length-1];if(g&&x.a-g.b<=6){g.b=x.b;g.h+=x.b-x.a+1}else groups.push({a:x.a,b:x.b,h:x.b-x.a+1})});
+    const rowEnd=[34,-1];
+    groups.forEach(g=>{const x0=(g.a-NOW)*cw,x1=(g.b+1-NOW)*cw;const txt=`${d.time[g.a].slice(11,13)}h · ${g.h} h`;const tw=txt.length*6.4;
+      let row=x0>=rowEnd[0]?0:x0>=rowEnd[1]?1:0;const lx=Math.min(W-tw,x0);rowEnd[row]=lx+tw+6;
+      const ly=row?22:10,by=row?24:24;
+      tl+=`<path d="M${x0.toFixed(1)},27 v-3 h${Math.max(2,x1-x0).toFixed(1)} v3" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`;
+      if(row)tl+=`<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${ly+2}" y2="24" stroke="var(--ok)" stroke-width="1"/>`;
+      tl+=`<text x="${lx.toFixed(1)}" y="${row?ly:ly+8}" font-size="11" font-weight="700" fill="var(--ok)" font-family="JetBrains Mono,monospace">${txt}</text>`});
+    tl+=`<text x="0" y="18" font-size="11" font-weight="700" fill="var(--red)" font-family="Barlow,system-ui,sans-serif">jetzt</text><rect x="0" y="22" width="2.4" height="34" fill="var(--red)"/>`;
+    if(sel>NOW)tl+=`<rect x="${((sel-NOW)*cw-1).toFixed(1)}" y="24" width="2.4" height="32" fill="var(--fg)" opacity=".7"/>`;
     tl+='</svg>';
     const leg=[['--no','zu warm'],['--warn','Grenzbereich'],['--mid','Start möglich'],['--good','läuft gut'],['--ok','optimal']].map(([c,l])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('')
       +'<span><i style="background:var(--fg);width:2px;opacity:.7"></i>Zeitregler</span>';
+    const tr=st=>st[2]>=2?'tr-grn':st[2]===1?'tr-yel':st[0]==='–'?'p-no':'tr-red';
     const m=d.meas&&d.meas.length?d.meas[d.meas.length-1]:null;
     const stSel=status(d.mean[sel]),stM=status(m?.tw);
     return `<div class="panel card">
       <div class="top"><span class="name"><span class="swatch" style="background:var(${s.color})"></span>${s.name}</span><span class="alt">${s.alt.toLocaleString('de-CH')} m</span></div>
       ${nextHtml}
-      <div class="tl"><div class="cap"><span>Die nächsten 10 Tage, stündlich</span><span><b>${total} h</b> Beschneiung möglich</span></div>${tl}<div class="tlleg">${leg}</div></div>
+      <div class="tl"><div class="cap"><span>Die nächsten 10 Tage, stündlich</span><span>Total in 10 Tagen: <b>${total} h</b> Beschneiung möglich · ${marg} h Grenzbereich</span></div>${tl}<div class="tlleg">${leg}</div></div>
       <div class="divider">Details</div>
       <div class="stats">
-        <div class="stat meas"><span class="h">Gemessen jetzt</span><span class="h2">Webcam · ${m?m.t.slice(11,16)+' Uhr':'–'}</span><b>${fmtT(m?.tw)}</b><small>Luft ${fmtT(m?.temp)} · ${m?Math.round(m.rh)+' %':'–'}</small><span class="pill ${stM[1]}">${stM[0]}</span></div>
-        <div class="stat fc"><span class="h">Prognose</span><span class="h2">${(t=>{const x=new Date(t);return DAYS[x.getDay()]+' '+x.getDate()+'.'+(x.getMonth()+1)+'., '+t.slice(11,16)})(d.time[sel])} · Zeitregler</span><b>${fmtT(d.mean[sel])}</b><small>Luft ${fmtT(d.temp[sel])}</small><span class="pill ${stSel[1]}">${stSel[0]}</span></div>
+        <div class="stat meas"><span class="h">Gemessen jetzt</span><span class="h2">Webcam · ${m?m.t.slice(11,16)+' Uhr':'–'}</span><b>${fmtT(m?.tw)}</b><small>Luft ${fmtT(m?.temp)} · ${m?Math.round(m.rh)+' %':'–'}</small><span class="pill ${tr(stM)}">${stM[0]}</span></div>
+        <div class="stat fc"><span class="h">Prognose</span><span class="h2">${(t=>{const x=new Date(t);return DAYS[x.getDay()]+' '+x.getDate()+'.'+(x.getMonth()+1)+'., '+t.slice(11,16)})(d.time[sel])} · Zeitregler</span><b>${fmtT(d.mean[sel])}</b><small>Luft ${fmtT(d.temp[sel])}</small><span class="pill ${tr(stSel)}">${stSel[0]}</span></div>
         <div class="stat cor"><span class="h">Korrektur</span><span class="h2">Schnitt letzte 24 h</span><b>${CORR&&d.biasN>=4?fmtD(d.biasTw):'aus'}</b><small>${d.biasN>=4?d.biasN+' Messstunden':'zu wenig Messwerte'}</small></div>
       </div></div>`}).join('');
 }
