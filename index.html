@@ -595,7 +595,7 @@ const Scene=(()=>{
   function buildStatic(){
     const i=DATA?+document.getElementById('time').value:0;
     const t=DATA?DATA.tal.time[i]:'2026-10-01T22:00',hour=+t.slice(11,13);
-    const dl=light(hour);G.dl=dl;
+    const dl=light(hour);G.dl=dl;G.lift=hour>=8&&hour<17; // Betriebszeit Bahn
     // Himmel
     const sky=ox.createLinearGradient(0,0,0,H);
     sky.addColorStop(0,rgb(mix([5,10,24],[52,118,204],dl)));sky.addColorStop(.55,rgb(mix([14,26,52],[132,186,236],dl)));
@@ -652,9 +652,11 @@ const Scene=(()=>{
     if(dirty)buildStatic();
     cx.clearRect(0,0,W,H);cx.drawImage(off,0,0,W,H);
     const s=S(),t=(ts||0)/1000;
+    // Gondeln laufen nur 08–17 Uhr; nachts bleiben sie stehen
+    const dt=G.lastTs!=null?Math.min(.1,t-G.lastTs):0;G.lastTs=t;if(G.lift)G.phase=(G.phase||0)+dt;const gp=G.phase||0;
     // Gondeln
     (G.sec||[]).forEach((path,k)=>{const n=k?4:6;for(let j=0;j<n;j++){
-      [[1,0],[-1,3]].forEach(([dir,off])=>{let f=((t/(k?32:40))*dir+j/n+(dir<0?.5/n:0))%1;if(f<0)f+=1;const p=at(path,f);
+      [[1,0],[-1,3]].forEach(([dir,off])=>{let f=((gp/(k?32:40))*dir+j/n+(dir<0?.5/n:0))%1;if(f<0)f+=1;const p=at(path,f);
         cx.strokeStyle='rgba(30,36,46,.9)';cx.lineWidth=1;cx.beginPath();cx.moveTo(p.x,p.y+off);cx.lineTo(p.x,p.y+off+6*s);cx.stroke();
         cx.fillStyle=k?'#2b3a4f':'#c8372d';cx.beginPath();cx.roundRect(p.x-5*s,p.y+off+6*s,10*s,9*s,2.5*s);cx.fill();
         cx.fillStyle=G.dl<.35?'rgba(255,214,140,.9)':'rgba(190,220,245,.9)';cx.fillRect(p.x-3.6*s,p.y+off+8*s,7.2*s,3.4*s)})}});
