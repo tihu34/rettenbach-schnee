@@ -78,7 +78,9 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .divider{display:flex;align-items:center;gap:10px;font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .divider::after{content:"";flex:1;border-top:1px solid var(--line)}
 .tl svg{display:block;width:100%;height:auto}
-.tl .cap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.tl .cap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:4px}.tl .cap b{color:var(--fg)}
+.tlleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-top:6px}
+.tlleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.tlleg i{width:14px;height:10px;border-radius:2px;display:inline-block}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{display:grid;gap:3px;align-content:start;padding:11px 12px;border-radius:11px;border:1px solid var(--line);background:var(--surface);min-width:0}
 .stat.meas{background:var(--soft)} .stat.fc{background:var(--fc-bg);border-color:var(--fc-line)} .stat.cor{border-style:dashed}
@@ -153,7 +155,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
   </section>
 
   <section class="panel">
-    <h2>Feuchtkugeltemperatur · 15 Tage</h2>
+    <h2>Feuchtkugeltemperatur · 10 Tage</h2>
     <p class="sub">Linie: Mittel aus ECMWF, ICON und GFS (mit Messkorrektur, falls eingeschaltet). Fläche: Spannweite des ECMWF-Ensembles (10–90 %). Punkte: gemessen an den Webcams. Unter der roten Linie können die Kanonen laufen.</p>
     <div class="legend" id="legend"></div>
     <div class="chartbox" id="chart"></div>
@@ -223,7 +225,7 @@ async function load(){
         .then(r=>r.json()).then(j=>(j.weatherData||[]).filter(x=>x.tempC!=null&&x.humidityPc!=null)
           .map(x=>({t:x.date+'T'+x.time.slice(0,5),temp:x.tempC,rh:x.humidityPc,tw:wetbulb(x.tempC,x.humidityPc,p)}))).catch(()=>[]);
       const [det,ecm,gfs,ms]=await Promise.all([
-        getJSON(`https://api.open-meteo.com/v1/forecast?${base(s)}&hourly=temperature_2m,relative_humidity_2m,snowfall&forecast_days=15&past_days=2&models=${DET.map(d=>d[0]).join(',')}`),
+        getJSON(`https://api.open-meteo.com/v1/forecast?${base(s)}&hourly=temperature_2m,relative_humidity_2m,snowfall&forecast_days=10&past_days=2&models=${DET.map(d=>d[0]).join(',')}`),
         getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=15&models=ecmwf_ifs025`),
         getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=30&models=gfs05`),
         meas,
@@ -325,22 +327,36 @@ function renderCards(){
     const nextHtml=next?`<div class="next"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span>
         <span class="big">${dLabel(d.time[next.a])}</span>
         <span class="det">ab <b>${d.time[next.a].slice(11,16)} Uhr</b><span class="cd">${countdown(next.a)}</span><br>ca. <b>${next.b-next.a+1} h</b> lang, bis <b>${fmtT(next.min)}</b> Feuchtkugel</span></div>`
-      :`<div class="next none"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span><span class="big">keins in 15 Tagen</span><span class="det">Schau in den 30-Tage-Kalender unten.</span></div>`;
-    // Zeitleiste ab jetzt
-    const N=d.time.length-NOW,W=600,cw=W/N;let tl=`<svg viewBox="0 0 ${W} 40" role="img" aria-label="Zeitleiste 15 Tage ${s.short}">`;
-    for(let k=0;k<N;k++){const v=d.mean[NOW+k];const c=['--no','--warn','--mid','--good','--ok'][status(v)[2]];
-      tl+=`<rect x="${(k*cw).toFixed(2)}" y="2" width="${(cw+.4).toFixed(2)}" height="20" fill="var(${c})"/>`}
-    d.time.forEach((t,i)=>{if(i<NOW||t.slice(11,13)!=='00')return;const x=(i-NOW)*cw;const dd=new Date(t);
-      tl+=`<line x1="${x}" x2="${x}" y1="0" y2="26" stroke="var(--surface)" stroke-width="1.2"/>`;
-      if((i-NOW)/24<14.5)tl+=`<text x="${x+12*cw}" y="37" text-anchor="middle" font-size="10" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}" font-family="JetBrains Mono,monospace">${dd.getDate()}.</text>`});
-    if(sel>=NOW)tl+=`<rect x="${((sel-NOW)*cw-1).toFixed(1)}" y="0" width="2" height="24" fill="var(--fg)"/>`;
+      :(()=>{const pe=dailyProb(d.ecm.time,d.ecmAdj),pg=dailyProb(d.gfs.time,d.gfsAdj);const first=new Date(ymd(new Date()));let hit=null;
+          for(let k=0;k<30&&!hit;k++){const dd=new Date(first);dd.setDate(dd.getDate()+k);const kk=ymd(dd);const p=k<15&&pe[kk]!=null?pe[kk]:pg[kk];if(p!=null&&p>=.5)hit={dd,p}}
+          return `<div class="next none"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span><span class="big">Keins in 10 Tagen</span><span class="det">${hit?`Laut Kalender ab ca. <b>${DAYS[hit.dd.getDay()]} ${hit.dd.getDate()}. ${MON[hit.dd.getMonth()]}</b> wahrscheinlich (<b>${Math.round(hit.p*100)} %</b>)`:'Auch im 30-Tage-Kalender kein Tag mit über 50 % Chance.'}</span></div>`})();
+    // Zeitleiste ab jetzt (10 Tage)
+    const N=d.time.length-NOW,W=600,cw=W/N,COL=['--no','--warn','--mid','--good','--ok'];
+    let tl=`<svg viewBox="0 0 ${W} 66" role="img" aria-label="Zeitleiste 10 Tage ${s.short}">`;
+    for(let k=0;k<N;k++){const v=d.mean[NOW+k];tl+=`<rect x="${(k*cw).toFixed(2)}" y="17" width="${(cw+.4).toFixed(2)}" height="24" fill="var(${COL[status(v)[2]]})"/>`}
+    d.time.forEach((t,i)=>{if(i<NOW||t.slice(11,13)!=='00')return;const x=(i-NOW)*cw;
+      tl+=`<line x1="${x}" x2="${x}" y1="17" y2="46" stroke="var(--muted)" stroke-width=".8" opacity=".6"/>`});
+    // Tagesbeschriftung mittig
+    const seen={};d.time.forEach((t,i)=>{if(i<NOW)return;const day=t.slice(0,10);if(seen[day])return;seen[day]=1;
+      const a=Math.max(i,NOW),b=Math.min(d.time.length-1,d.time.findIndex(x=>x.slice(0,10)>day)-1<0?d.time.length-1:d.time.findIndex(x=>x.slice(0,10)>day)-1);
+      if((b-a)<8)return;const x=((a+b+1)/2-NOW)*cw;const dd=new Date(day);const we=[0,6].includes(dd.getDay());
+      tl+=`<text x="${x.toFixed(1)}" y="60" text-anchor="middle" font-size="12.5" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
+    // Fenster beschriften
+    let lastLbl=40;
+    w.forEach(x=>{const px=(x.a-NOW)*cw;tl+=`<path d="M${px.toFixed(1)},15 v-4 h${Math.max(2,(x.b-x.a+1)*cw).toFixed(1)} v4" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`;
+      if(px-lastLbl<30)return;lastLbl=px;
+      tl+=`<text x="${Math.min(W-24,px).toFixed(1)}" y="9" font-size="11" font-weight="700" fill="var(--ok)" font-family="JetBrains Mono,monospace">${d.time[x.a].slice(11,13)}h</text>`});
+    tl+=`<text x="0" y="9" font-size="11" font-weight="700" fill="var(--red)" font-family="Barlow,system-ui,sans-serif">jetzt</text><rect x="0" y="12" width="2.4" height="32" fill="var(--red)"/>`;
+    if(sel>NOW)tl+=`<rect x="${((sel-NOW)*cw-1).toFixed(1)}" y="12" width="2.4" height="32" fill="var(--fg)" opacity=".7"/>`;
     tl+='</svg>';
+    const leg=[['--no','zu warm'],['--warn','Grenzbereich'],['--mid','Start möglich'],['--good','läuft gut'],['--ok','optimal']].map(([c,l])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('')
+      +'<span><i style="background:var(--fg);width:2px;opacity:.7"></i>Zeitregler</span>';
     const m=d.meas&&d.meas.length?d.meas[d.meas.length-1]:null;
     const stSel=status(d.mean[sel]),stM=status(m?.tw);
     return `<div class="panel card">
       <div class="top"><span class="name"><span class="swatch" style="background:var(${s.color})"></span>${s.name}</span><span class="alt">${s.alt.toLocaleString('de-CH')} m</span></div>
       ${nextHtml}
-      <div class="tl"><div class="cap"><span>Die nächsten 15 Tage, stündlich</span><span>${total} h Beschneiung möglich</span></div>${tl}</div>
+      <div class="tl"><div class="cap"><span>Die nächsten 10 Tage, stündlich</span><span><b>${total} h</b> Beschneiung möglich</span></div>${tl}<div class="tlleg">${leg}</div></div>
       <div class="divider">Details</div>
       <div class="stats">
         <div class="stat meas"><span class="h">Gemessen jetzt</span><span class="h2">Webcam · ${m?m.t.slice(11,16)+' Uhr':'–'}</span><b>${fmtT(m?.tw)}</b><small>Luft ${fmtT(m?.temp)} · ${m?Math.round(m.rh)+' %':'–'}</small><span class="pill ${stM[1]}">${stM[0]}</span></div>
@@ -375,7 +391,7 @@ function renderChart(){
   const d0=DATA.tal,n=d0.time.length;
   const X=i=>L+(W-L-R)*i/(n-1),Y=v=>T+(H-T-B)*(ymax-Math.max(ymin,Math.min(ymax,v)))/(ymax-ymin);
   const t0=new Date(d0.time[0]).getTime(),idxOf=t=>(new Date(t).getTime()-t0)/3600e3;
-  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Feuchtkugeltemperatur 15 Tage">`;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Feuchtkugeltemperatur 10 Tage">`;
   [[ymin,OPT,'--ok',.16],[OPT,GOOD,'--good',.12],[GOOD,START,'--mid',.2],[START,MARGIN,'--warn',.16]]
     .forEach(([a,b,c,o])=>s+=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" fill="var(${c})" opacity="${o}"/>`);
   s+=`<rect x="${L}" y="${T}" width="${X(NOW)-L}" height="${H-T-B}" fill="var(--muted)" opacity=".07"/>`;
@@ -385,7 +401,7 @@ function renderChart(){
     if(h===12){const dd=new Date(t);s+=`<text x="${X(i)}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}">${DAYS[dd.getDay()]}</text><text x="${X(i)}" y="${H-B+33}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${dd.getDate()}.${dd.getMonth()+1}.</text>`}});
   const path=vals=>{let p='',pen=false;vals.forEach((v,i)=>{if(v==null){pen=false;return}p+=(pen?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)+' ';pen=true});return p};
   STATIONS.forEach(st=>{const d=DATA[st.id],e=d.ecm;const lo=[],hi=[],xs=[];
-    e.time.forEach((t,i)=>{const v=d.ecmAdj.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
+    e.time.forEach((t,i)=>{if(idxOf(t)>n-1)return;const v=d.ecmAdj.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
       xs.push(X(idxOf(t)));lo.push(Y(v[Math.floor(v.length*.1)]));hi.push(Y(v[Math.floor(v.length*.9)]))});
     if(xs.length){let p='M'+xs.map((x,i)=>x.toFixed(1)+','+hi[i].toFixed(1)).join('L');p+='L'+xs.map((x,i)=>x.toFixed(1)+','+lo[i].toFixed(1)).reverse().join('L')+'Z';
       s+=`<path d="${p}" fill="var(${st.color})" opacity=".12"/>`}});
