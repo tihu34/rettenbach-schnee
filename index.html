@@ -68,7 +68,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .card .name{font:700 21px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
 .card .alt{font:600 14px var(--mono);color:var(--muted)}
 .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle}
-.next{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;padding:16px 18px;border-radius:14px;background:var(--go-bg);border:1.5px solid var(--go-line)}
+.next{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;min-height:118px;align-content:center;padding:16px 18px;border-radius:14px;background:var(--go-bg);border:1.5px solid var(--go-line)}
 .next .lbl{grid-column:1/-1;display:flex;align-items:center;gap:8px;font:700 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--go-fg)}
 .next .lbl svg{width:18px;height:18px;flex:none}
 .next .big{font:800 clamp(34px,5vw,48px)/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--go-fg)}
@@ -78,7 +78,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .divider{display:flex;align-items:center;gap:10px;font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .divider::after{content:"";flex:1;border-top:1px solid var(--line)}
 .tl svg{display:block;width:100%;height:auto}
-.tl .cap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:4px}.tl .cap b{color:var(--fg)}
+.tl .cap{display:grid;gap:1px;font-size:13px;color:var(--muted);margin-bottom:4px}.tl .cap b{color:var(--fg)}
 .tlleg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-top:6px}
 .tlleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.tlleg i{width:14px;height:10px;border-radius:2px;display:inline-block}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -344,10 +344,10 @@ function renderCards(){
       if((b-a)<8)return;const x=((a+b+1)/2-NOW)*cw;const dd=new Date(day);const we=[0,6].includes(dd.getDay());
       tl+=`<text x="${x.toFixed(1)}" y="72" text-anchor="middle" font-size="12.5" font-weight="${we?700:400}" fill="${we?'var(--fg)':'var(--muted)'}" font-family="Barlow,system-ui,sans-serif">${DAYS[dd.getDay()]} ${dd.getDate()}.</text>`});
     // Fenster beschriften
-    // Fenster mit < 6 h Pause zu Abschnitten zusammenfassen
-    const groups=[];w.forEach(x=>{const g=groups[groups.length-1];if(g&&x.a-g.b<=6){g.b=x.b;g.h+=x.b-x.a+1}else groups.push({a:x.a,b:x.b,h:x.b-x.a+1})});
+    // Fenster mit max. 12 h Pause zu Abschnitten zusammenfassen
+    const groups=[];w.forEach(x=>{const g=groups[groups.length-1];if(g&&x.a-g.b<=12){g.b=x.b;g.h+=x.b-x.a+1}else groups.push({a:x.a,b:x.b,h:x.b-x.a+1})});
     const rowEnd=[34,-1];
-    groups.forEach(g=>{const x0=(g.a-NOW)*cw,x1=(g.b+1-NOW)*cw;const txt=`${d.time[g.a].slice(11,13)}h · ${g.h} h`;const tw=txt.length*6.4;
+    groups.forEach(g=>{const x0=(g.a-NOW)*cw,x1=(g.b+1-NOW)*cw;const hEnd=String((+d.time[g.b].slice(11,13)+1)%24).padStart(2,'0');const txt=g.b-g.a<3?`${d.time[g.a].slice(11,13)}h · ${g.h} h`:`${d.time[g.a].slice(11,13)}–${hEnd}h · ${g.h} h`;const tw=txt.length*6.4;
       let row=x0>=rowEnd[0]?0:x0>=rowEnd[1]?1:0;const lx=Math.min(W-tw,x0);rowEnd[row]=lx+tw+6;
       const ly=row?22:10,by=row?24:24;
       tl+=`<path d="M${x0.toFixed(1)},27 v-3 h${Math.max(2,x1-x0).toFixed(1)} v3" fill="none" stroke="var(--ok)" stroke-width="1.4"/>`;
