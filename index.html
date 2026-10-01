@@ -168,7 +168,7 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 
   <section class="panel">
     <h2>Webcams live</h2>
-    <p class="sub">360°-Panorama. Es schwenkt langsam von selbst; wischen oder scrollen hält es an. Der Link öffnet die Live-Ansicht bei Panomax.</p>
+    <p class="sub">360°-Panorama, ganz rechts ausgerichtet: Dort stehen die Schneeanlagen. Nach links wischen zeigt das ganze Panorama. Der Link öffnet die Live-Ansicht bei Panomax.</p>
     <div class="cams" id="cams"></div>
   </section>
 
@@ -350,7 +350,7 @@ function renderCorr(){
   document.getElementById('corrinfo').innerHTML=(CORR?'Korrektur aktiv · ':'Korrektur aus · ')+parts.join(' · ')+' (Feuchtkugel, Schnitt letzte 24 h)';
 }
 const TLW=()=>innerWidth<640?320:600;
-let tlBucket=TLW();addEventListener('resize',()=>{if(TLW()!==tlBucket){tlBucket=TLW();if(DATA)renderCards()}});
+let tlBucket=TLW();addEventListener('resize',()=>{if(TLW()!==tlBucket){tlBucket=TLW();if(DATA){renderCards();renderChart()}}});
 function renderCards(){
   const sel=+document.getElementById('time').value;
   document.getElementById('cards').innerHTML=STATIONS.map(s=>{
@@ -403,50 +403,44 @@ function renderCards(){
         <div class="stat cor"><span class="h">Korrektur</span><span class="h2">Schnitt letzte 24 h</span><b>${CORR&&d.biasN>=4?fmtD(d.biasTw):'aus'}</b><small>${d.biasN>=4?d.biasN+' Messstunden':'zu wenig Messwerte'}</small></div>
       </div></div>`}).join('');
 }
-let camPan=[];
 function renderCams(){
   const bust=Math.floor(Date.now()/60000);
   document.getElementById('cams').innerHTML=STATIONS.map(s=>{const m=DATA?.[s.id]?.meas;const last=m&&m.length?m[m.length-1]:null;
     return `<div class="cam"><div class="strip" tabindex="0" aria-label="Panorama ${s.camName}"><img src="https://panodata.panomax.com/cams/${s.cam}/recent_default.jpg?x=${bust}" alt="360°-Panorama Webcam ${s.camName}" decoding="async"></div>
     <div class="meta"><span><span class="swatch" style="background:var(${s.color})"></span><b>${s.camName}</b>${last?` · ${fmtT(last.temp)}, ${Math.round(last.rh)} % um ${last.t.slice(11,16)}`:''}</span><a class="live" href="${s.camUrl}" target="_blank" rel="noopener">Live-Ansicht öffnen ↗</a></div></div>`}).join('');
-  camPan=[...document.querySelectorAll('.cam .strip')].map((el,k)=>{const o={el,dir:k?-1:1,auto:true,pos:0};
-    el.querySelector('img').addEventListener('load',()=>{o.pos=el.scrollLeft=(el.scrollWidth-el.clientWidth)*(k?.7:.3)});
-    const stop=()=>{o.auto=false};['pointerdown','wheel','touchstart','keydown'].forEach(ev=>el.addEventListener(ev,stop,{passive:true}));
+  document.querySelectorAll('.cam .strip').forEach(el=>{
+    el.querySelector('img').addEventListener('load',()=>{el.scrollLeft=el.scrollWidth}); // ganz rechts: dort stehen die Schneeanlagen
     // Maus-Ziehen
     let drag=null;el.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;drag={x:e.clientX,s:el.scrollLeft};el.setPointerCapture(e.pointerId);el.style.cursor='grabbing'});
     el.addEventListener('pointermove',e=>{if(drag)el.scrollLeft=drag.s-(e.clientX-drag.x)});
     el.addEventListener('pointerup',()=>{drag=null;el.style.cursor=''});
-    return o});
+  });
 }
-function panTick(){
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)camPan.forEach(o=>{if(!o.auto)return;const max=o.el.scrollWidth-o.el.clientWidth;if(max<=0)return;
-    o.pos+=o.dir*.35;if(o.pos>=max){o.pos=max;o.dir=-1}if(o.pos<=0){o.pos=0;o.dir=1}o.el.scrollLeft=o.pos});
-  setTimeout(()=>requestAnimationFrame(panTick),33);
-}
-panTick();
 
 function renderChart(){
   const W=1100,H=420,L=50,R=16,T=14,B=46,ymin=-14,ymax=8;
   const d0=DATA.tal,n=d0.time.length;
-  const X=i=>L+(W-L-R)*i/(n-1),Y=v=>T+(H-T-B)*(ymax-Math.max(ymin,Math.min(ymax,v)))/(ymax-ymin);
+  // Mobile: erst ab gestern 00:00 zeigen, damit gestern/heute sofort sichtbar sind
+  const OFF=innerWidth<640?Math.max(0,d0.time.findIndex(t=>t.slice(0,10)===ymd(new Date(Date.now()-864e5)))):0;
+  const X=i=>L+(W-L-R)*(i-OFF)/(n-1-OFF),Y=v=>T+(H-T-B)*(ymax-Math.max(ymin,Math.min(ymax,v)))/(ymax-ymin);
   const t0=new Date(d0.time[0]).getTime(),idxOf=t=>(new Date(t).getTime()-t0)/3600e3;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Feuchtkugeltemperatur 10 Tage">`;
   [[ymin,OPT,'--ok',.16],[OPT,GOOD,'--good',.12],[GOOD,START,'--mid',.2],[START,MARGIN,'--warn',.16]]
     .forEach(([a,b,c,o])=>s+=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" fill="var(${c})" opacity="${o}"/>`);
   s+=`<rect x="${L}" y="${T}" width="${X(NOW)-L}" height="${H-T-B}" fill="var(--muted)" opacity=".07"/>`;
   for(let v=ymin;v<=ymax;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}°</text>`;
-  d0.time.forEach((t,i)=>{const h=+t.slice(11,13);
+  d0.time.forEach((t,i)=>{if(i<OFF)return;const h=+t.slice(11,13);
     if(h===0)s+=`<line x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)"/>`;
     if(h===12){const dd=new Date(t);s+=`<text x="${X(i)}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}">${DAYS[dd.getDay()]}</text><text x="${X(i)}" y="${H-B+33}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${dd.getDate()}.${dd.getMonth()+1}.</text>`}});
-  const path=vals=>{let p='',pen=false;vals.forEach((v,i)=>{if(v==null){pen=false;return}p+=(pen?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)+' ';pen=true});return p};
+  const path=vals=>{let p='',pen=false;vals.forEach((v,i)=>{if(i<OFF)return;if(v==null){pen=false;return}p+=(pen?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)+' ';pen=true});return p};
   STATIONS.forEach(st=>{const d=DATA[st.id],e=d.ecm;const lo=[],hi=[],xs=[];
-    e.time.forEach((t,i)=>{if(idxOf(t)>n-1)return;const v=d.ecmAdj.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
+    e.time.forEach((t,i)=>{if(idxOf(t)>n-1||idxOf(t)<OFF)return;const v=d.ecmAdj.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
       xs.push(X(idxOf(t)));lo.push(Y(v[Math.floor(v.length*.1)]));hi.push(Y(v[Math.floor(v.length*.9)]))});
     if(xs.length){let p='M'+xs.map((x,i)=>x.toFixed(1)+','+hi[i].toFixed(1)).join('L');p+='L'+xs.map((x,i)=>x.toFixed(1)+','+lo[i].toFixed(1)).reverse().join('L')+'Z';
       s+=`<path d="${p}" fill="var(${st.color})" opacity=".12"/>`}});
   if(CORR)STATIONS.forEach(st=>s+=`<path d="${path(DATA[st.id].rawTw)}" fill="none" stroke="var(${st.color})" stroke-width="1.2" stroke-dasharray="3 4" opacity=".55"/>`);
   STATIONS.forEach(st=>s+=`<path d="${path(DATA[st.id].mean)}" fill="none" stroke="var(${st.color})" stroke-width="2.6" stroke-linejoin="round"/>`);
-  STATIONS.forEach(st=>{(DATA[st.id].meas||[]).forEach(m=>{const k=idxOf(m.t);if(k<0||k>n-1||m.tw==null)return;
+  STATIONS.forEach(st=>{(DATA[st.id].meas||[]).forEach(m=>{const k=idxOf(m.t);if(k<OFF||k>n-1||m.tw==null)return;
     s+=`<circle cx="${X(k).toFixed(1)}" cy="${Y(m.tw).toFixed(1)}" r="2.4" fill="var(--surface)" stroke="var(${st.color})" stroke-width="1.4"/>`})});
   s+=`<line x1="${L}" x2="${W-R}" y1="${Y(START)}" y2="${Y(START)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>`;
   s+=`<text x="${W-R-6}" y="${Y(START)-6}" text-anchor="end" font-size="12" font-weight="600" fill="var(--red)">Startgrenze −2,5 °C</text>`;
@@ -460,8 +454,6 @@ function renderChart(){
     +(CORR?'<span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)"></i>ohne Korrektur</span>':'')
     +'<span><i style="background:var(--surface);border:1.5px solid var(--muted);width:9px;height:9px;border-radius:50%"></i>Messung Webcam</span><span><i style="background:var(--red)"></i>Startgrenze</span>';
   renderChart.X=X;
-  // auf schmalen Bildschirmen beim ersten Mal zu «jetzt» scrollen
-  const box=document.getElementById('chart');if(!renderChart.scrolled&&box.scrollWidth>box.clientWidth){box.scrollLeft=X(NOW)/W*box.scrollWidth-40;renderChart.scrolled=true}
 }
 function renderCal(){
   const first=new Date(ymd(new Date()));
@@ -481,7 +473,7 @@ function renderCal(){
 function updateTime(){
   if(!DATA)return;const i=+document.getElementById('time').value;const t=DATA.tal.time[i];
   document.getElementById('tlabel').textContent=dLabel(t)+' '+t.slice(11,16);
-  const c=document.getElementById('cursor');if(c&&renderChart.X){c.setAttribute('x1',renderChart.X(i));c.setAttribute('x2',renderChart.X(i))}
+  const c=document.getElementById('cursor');if(c&&renderChart.X){const cx2=Math.max(50,renderChart.X(i));c.setAttribute('x1',cx2);c.setAttribute('x2',cx2)}
   renderCards();
   document.getElementById('hud').textContent=dLabel(t)+' · '+t.slice(11,16)+' Uhr'+(i<NOW?' (vergangen)':i===NOW?' (jetzt)':'');
   Scene.invalidate();
