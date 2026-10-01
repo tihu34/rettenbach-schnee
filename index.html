@@ -215,9 +215,17 @@ const ymd=d=>d.toLocaleDateString('sv-SE',{timeZone:'Europe/Vienna'});
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 
 let DATA=null, NOW=0;
+// Automatische Aktualisierung: alle 15 min, solange die Seite sichtbar ist
+const AUTO_MIN=15;let LAST=0,LOADING=false,userMoved=false;
+function updStamp(){if(!LAST)return;const min=Math.round((Date.now()-LAST)/60000);
+  document.getElementById('stamp').textContent='Stand '+new Date(LAST).toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})+' · '+(min<1?'gerade eben':'vor '+min+' min')+' · automatisch alle '+AUTO_MIN+' min'}
+setInterval(()=>{if(!document.hidden&&LAST&&Date.now()-LAST>=AUTO_MIN*60e3)load();else updStamp()},60e3);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LAST&&Date.now()-LAST>=AUTO_MIN*60e3)load()});
 async function load(){
+  if(LOADING)return;LOADING=true;
   const btn=document.getElementById('refresh');btn.disabled=true;
-  document.getElementById('stamp').textContent='lade Daten …';
+  const sl0=document.getElementById('time');const prevT=DATA&&userMoved?DATA.tal.time[+sl0.value]:null;
+  document.getElementById('stamp').textContent=DATA?'aktualisiere …':'lade Daten …';
   try{
     const out={};
     await Promise.all(STATIONS.map(async s=>{
@@ -251,15 +259,20 @@ async function load(){
       out[s.id]={time:h.time,rawTw,rawT,snow,ecm:ens(ecm),gfs:ens(gfs),meas:ms,biasTw,biasT,biasN:hrs.length};
     }));
     DATA=out;derive();
-    const now=new Date();
-    document.getElementById('stamp').textContent='Stand '+now.toLocaleString('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const sl=document.getElementById('time');sl.max=DATA.tal.time.length-1;sl.value=NOW;
-    renderCams();render();
+    LAST=Date.now();updStamp();
+    const sl=document.getElementById('time');sl.max=DATA.tal.time.length-1;
+    const keep=prevT?DATA.tal.time.indexOf(prevT):-1;sl.value=keep>=0?keep:NOW;
+    if(document.querySelector('.cam img')){const bust=Math.floor(Date.now()/60000);document.querySelectorAll('.cam img').forEach((img,k)=>img.src=`https://panodata.panomax.com/cams/${STATIONS[k].cam}/recent_default.jpg?x=${bust}`);
+      STATIONS.forEach((st,k)=>{const m=DATA[st.id].meas,last=m&&m.length?m[m.length-1]:null;const el=document.querySelectorAll('.cam .meta > span')[k];
+        if(el&&last)el.innerHTML=`<span class="swatch" style="background:var(${st.color})"></span><b>${st.camName}</b> · ${fmtT(last.temp)}, ${Math.round(last.rh)} % um ${last.t.slice(11,16)}`})}
+    else renderCams();
+    render();
   }catch(e){
     console.error(e);
-    document.getElementById('stamp').innerHTML='<span class="err">Daten konnten nicht geladen werden. Bitte nochmals «Aktualisieren» drücken.</span>';
+    document.getElementById('stamp').innerHTML='<span class="err">Daten konnten nicht geladen werden'+(DATA?' (zeige letzten Stand)':'')+'. Nächster Versuch automatisch.</span>';
+    if(!LAST)LAST=Date.now()-(AUTO_MIN-2)*60e3; // in ~2 min erneut versuchen
   }
-  btn.disabled=false;
+  LOADING=false;btn.disabled=false;
 }
 // abgeleitete (ggf. korrigierte) Reihen
 function derive(){
@@ -453,14 +466,14 @@ function updateTime(){
   document.getElementById('hud').textContent=dLabel(t)+' · '+t.slice(11,16)+' Uhr'+(i<NOW?' (vergangen)':i===NOW?' (jetzt)':'');
   Scene.invalidate();
 }
-document.getElementById('time').addEventListener('input',updateTime);
+document.getElementById('time').addEventListener('input',()=>{userMoved=true;updateTime()});
 document.getElementById('refresh').addEventListener('click',load);
 document.getElementById('corr').addEventListener('change',e=>{CORR=e.target.checked;try{localStorage.setItem('rb-corr',CORR?'1':'0')}catch(_){}if(DATA){derive();render()}});
 let playing=null;
 document.getElementById('play').addEventListener('click',e=>{
   const sl=document.getElementById('time');
   if(playing){clearInterval(playing);playing=null;e.target.textContent='▶ Abspielen';return}
-  e.target.textContent='❚❚ Pause';
+  userMoved=true;e.target.textContent='❚❚ Pause';
   playing=setInterval(()=>{sl.value=(+sl.value+1)%(+sl.max+1);updateTime()},110);
 });
 
