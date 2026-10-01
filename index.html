@@ -196,8 +196,8 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 
 <script>
 const STATIONS=[
-  {id:'tal',name:'Rettenbach Talstation',short:'Talstation',alt:2680,lat:46.9375,lon:10.9290,color:'--tal',gun:'TF-Turm',cam:196,camUrl:'https://soelden.panomax.com/rettenbach',camName:'Rettenbachgletscher'},
-  {id:'mittel',name:'Schwarze Schneide Mittelstation',short:'Mittelstation',alt:3000,lat:46.9300,lon:10.9180,color:'--mittel',gun:'TF-Turm',cam:216,camUrl:'https://soelden.panomax.com/schwarzeschneid',camName:'Schwarze Schneid'},
+  {id:'tal',name:'Rettenbach Talstation',short:'Talstation',alt:2680,lat:46.9375,lon:10.9290,color:'--tal',gun:'TF-Turm',cam:196,camUrl:'https://soelden.panomax.com/rettenbach',camName:'Rettenbachgletscher',camShift:0},
+  {id:'mittel',name:'Schwarze Schneide Mittelstation',short:'Mittelstation',alt:3000,lat:46.9300,lon:10.9180,color:'--mittel',gun:'TF-Turm',cam:216,camUrl:'https://soelden.panomax.com/schwarzeschneid',camName:'Schwarze Schneid',camShift:.33},
 ];
 const DET=[['ecmwf_ifs025','ECMWF'],['icon_seamless','ICON'],['gfs_seamless','GFS']];
 const START=-2.5, MARGIN=-2, GOOD=-4, OPT=-7, MINH=6;
@@ -408,8 +408,9 @@ function renderCams(){
   document.getElementById('cams').innerHTML=STATIONS.map(s=>{const m=DATA?.[s.id]?.meas;const last=m&&m.length?m[m.length-1]:null;
     return `<div class="cam"><div class="strip" tabindex="0" aria-label="Panorama ${s.camName}"><img src="https://panodata.panomax.com/cams/${s.cam}/recent_default.jpg?x=${bust}" alt="360°-Panorama Webcam ${s.camName}" decoding="async"></div>
     <div class="meta"><span><span class="swatch" style="background:var(${s.color})"></span><b>${s.camName}</b>${last?` · ${fmtT(last.temp)}, ${Math.round(last.rh)} % um ${last.t.slice(11,16)}`:''}</span><a class="live" href="${s.camUrl}" target="_blank" rel="noopener">Live-Ansicht öffnen ↗</a></div></div>`}).join('');
-  document.querySelectorAll('.cam .strip').forEach(el=>{
-    el.querySelector('img').addEventListener('load',()=>{el.scrollLeft=el.scrollWidth}); // ganz rechts: dort stehen die Schneeanlagen
+  document.querySelectorAll('.cam .strip').forEach((el,k)=>{
+    // rechts ausgerichtet (dort stehen die Schneeanlagen), Schwarze Schneid etwas nach links versetzt
+    el.querySelector('img').addEventListener('load',()=>{el.scrollLeft=el.scrollWidth-el.clientWidth*(1+STATIONS[k].camShift)});
     // Maus-Ziehen
     let drag=null;el.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;drag={x:e.clientX,s:el.scrollLeft};el.setPointerCapture(e.pointerId);el.style.cursor='grabbing'});
     el.addEventListener('pointermove',e=>{if(drag)el.scrollLeft=drag.s-(e.clientX-drag.x)});
@@ -418,7 +419,9 @@ function renderCams(){
 }
 
 function renderChart(){
-  const W=1100,H=420,L=50,R=16,T=14,B=46,ymin=-14,ymax=8;
+  // Mobile: grössere Schrift, Breite so, dass gestern + heute + 3 Tage sichtbar sind
+  const mob=innerWidth<640,FS=mob?1.6:1;
+  const W=1100,H=mob?460:420,L=mob?72:50,R=16,T=mob?20:14,B=mob?66:46,ymin=-14,ymax=8;
   const d0=DATA.tal,n=d0.time.length;
   // Mobile: erst ab gestern 00:00 zeigen, damit gestern/heute sofort sichtbar sind
   const OFF=innerWidth<640?Math.max(0,d0.time.findIndex(t=>t.slice(0,10)===ymd(new Date(Date.now()-864e5)))):0;
@@ -428,10 +431,10 @@ function renderChart(){
   [[ymin,OPT,'--ok',.16],[OPT,GOOD,'--good',.12],[GOOD,START,'--mid',.2],[START,MARGIN,'--warn',.16]]
     .forEach(([a,b,c,o])=>s+=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" fill="var(${c})" opacity="${o}"/>`);
   s+=`<rect x="${L}" y="${T}" width="${X(NOW)-L}" height="${H-T-B}" fill="var(--muted)" opacity=".07"/>`;
-  for(let v=ymin;v<=ymax;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}°</text>`;
+  for(let v=ymin;v<=ymax;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="${12*FS}" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}°</text>`;
   d0.time.forEach((t,i)=>{if(i<OFF)return;const h=+t.slice(11,13);
     if(h===0)s+=`<line x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)"/>`;
-    if(h===12){const dd=new Date(t);s+=`<text x="${X(i)}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}">${DAYS[dd.getDay()]}</text><text x="${X(i)}" y="${H-B+33}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${dd.getDate()}.${dd.getMonth()+1}.</text>`}});
+    if(h===12){const dd=new Date(t);s+=`<text x="${X(i)}" y="${H-B+18*FS}" text-anchor="middle" font-size="${12*FS}" fill="${[0,6].includes(dd.getDay())?'var(--fg)':'var(--muted)'}">${DAYS[dd.getDay()]}</text><text x="${X(i)}" y="${H-B+33*FS}" text-anchor="middle" font-size="${11*FS}" fill="var(--muted)" font-family="JetBrains Mono,monospace">${dd.getDate()}.${dd.getMonth()+1}.</text>`}});
   const path=vals=>{let p='',pen=false;vals.forEach((v,i)=>{if(i<OFF)return;if(v==null){pen=false;return}p+=(pen?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)+' ';pen=true});return p};
   STATIONS.forEach(st=>{const d=DATA[st.id],e=d.ecm;const lo=[],hi=[],xs=[];
     e.time.forEach((t,i)=>{if(idxOf(t)>n-1||idxOf(t)<OFF)return;const v=d.ecmAdj.map(m=>m[i]).filter(x=>x!=null).sort((a,b)=>a-b);if(v.length<5)return;
@@ -443,13 +446,15 @@ function renderChart(){
   STATIONS.forEach(st=>{(DATA[st.id].meas||[]).forEach(m=>{const k=idxOf(m.t);if(k<OFF||k>n-1||m.tw==null)return;
     s+=`<circle cx="${X(k).toFixed(1)}" cy="${Y(m.tw).toFixed(1)}" r="2.4" fill="var(--surface)" stroke="var(${st.color})" stroke-width="1.4"/>`})});
   s+=`<line x1="${L}" x2="${W-R}" y1="${Y(START)}" y2="${Y(START)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>`;
-  s+=`<text x="${W-R-6}" y="${Y(START)-6}" text-anchor="end" font-size="12" font-weight="600" fill="var(--red)">Startgrenze −2,5 °C</text>`;
-  s+=`<line x1="${X(NOW)}" x2="${X(NOW)}" y1="${T}" y2="${H-B}" stroke="var(--red)" stroke-width="1.5"/><text x="${X(NOW)+4}" y="${T+12}" font-size="11" font-weight="600" fill="var(--red)">jetzt</text>`;
-  [[(OPT+ymin)/2,'optimal'],[(OPT+GOOD)/2,'gut'],[(GOOD+START)/2,'Start']].forEach(([v,l])=>s+=`<text x="${W-R-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${l}</text>`);
+  s+=`<text x="${W-R-6}" y="${Y(START)-6}" text-anchor="end" font-size="${12*FS}" font-weight="600" fill="var(--red)">Startgrenze −2,5 °C</text>`;
+  s+=`<line x1="${X(NOW)}" x2="${X(NOW)}" y1="${T}" y2="${H-B}" stroke="var(--red)" stroke-width="1.5"/><text x="${X(NOW)+4}" y="${T+12}" font-size="${11*FS}" font-weight="600" fill="var(--red)">jetzt</text>`;
+  [[(OPT+ymin)/2,'optimal'],[(OPT+GOOD)/2,'gut'],[(GOOD+START)/2,'Start']].forEach(([v,l])=>s+=`<text x="${W-R-6}" y="${Y(v)+4}" text-anchor="end" font-size="${11*FS}" fill="var(--muted)">${l}</text>`);
   const i=+document.getElementById('time').value;
   s+=`<line id="cursor" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--fg)" stroke-width="1.5" opacity=".55"/>`;
   s+='</svg>';
   document.getElementById('chart').innerHTML=s;
+  const box=document.getElementById('chart'),svg=box.querySelector('svg');
+  if(mob){svg.style.minWidth=Math.round(box.clientWidth*((n-OFF)/24)/5)+'px';box.scrollLeft=0}else svg.style.minWidth='';
   document.getElementById('legend').innerHTML=STATIONS.map(st=>`<span><i style="background:var(${st.color})"></i>${st.short} ${st.alt} m</span>`).join('')
     +(CORR?'<span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)"></i>ohne Korrektur</span>':'')
     +'<span><i style="background:var(--surface);border:1.5px solid var(--muted);width:9px;height:9px;border-radius:50%"></i>Messung Webcam</span><span><i style="background:var(--red)"></i>Startgrenze</span>';
