@@ -81,7 +81,8 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .stat b{font:700 24px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat small{font-size:12px;color:var(--muted)}
 .pill{display:inline-block;padding:2px 10px;border-radius:99px;font:600 12px var(--body);white-space:nowrap;justify-self:start}
-.p-ok{background:var(--ok);color:#fff}.p-good{background:var(--good);color:#fff}.p-mid{background:var(--mid);color:var(--fg)}.p-warn{background:var(--warn);color:#1a1300}.p-no{background:var(--no);color:var(--nofg)}
+.pill.p-ok{background:var(--ok);color:#fff}.pill.p-good{background:var(--good);color:#fff}.pill.p-mid{background:var(--mid);color:var(--fg)}.pill.p-warn{background:var(--warn);color:#1a1300}.pill.p-no{background:var(--no);color:var(--nofg)}
+.stat .pill{text-transform:none;letter-spacing:0;font-size:12px}
 /* Webcams */
 .cams{display:grid;gap:18px}
 .cam{display:grid;gap:8px;min-width:0}
@@ -460,7 +461,7 @@ const Scene=(()=>{
     [cv,off].forEach(c=>{c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)});cx.setTransform(dpr,0,0,dpr,0,0);ox.setTransform(dpr,0,0,dpr,0,0);
     yOf=m=>H*(.985-(m-2560)/(3560-2560)*.8);dirty=true;kick()}
   addEventListener('resize',resize);
-  const S=()=>Math.max(.62,Math.min(1.25,W/1100)); // Massstab
+  const S=()=>Math.max(.5,Math.min(1,W/1100))*.76; // Massstab (bewusst klein, damit die Berge wirken)
 
   function layer(fn,top,bot,step,shade,snowLine,dl){
     const g=ox.createLinearGradient(0,yOf(3560),0,H);g.addColorStop(0,rgb(top));g.addColorStop(1,rgb(bot));
@@ -522,11 +523,11 @@ const Scene=(()=>{
       for(let t=0;t<=1;t+=.02){out.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t+sag*4*t*(1-t)})}}
     let L=0;out.forEach((p,i)=>{if(i)L+=Math.hypot(p.x-out[i-1].x,p.y-out[i-1].y);p.l=L});out.L=L;return out}
   function at(path,f){const l=f*path.L;let k=1;while(k<path.length-1&&path[k].l<l)k++;const a=path[k-1],b=path[k];const t=(l-a.l)/((b.l-a.l)||1);return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}}
-  function gun(x,tower,dl,run,dir=1){
-    const s=S(),gy=yOf(terrain(x/W))+26*s,steel=rgb(mix([60,66,74],[120,128,138],dl));
+  function gun(x,tower,dl,run,dir=1,ang=-.32){
+    const s=S(),gy=yOf(terrain(x/W))+20*s,steel=rgb(mix([60,66,74],[120,128,138],dl));
     let top;
     if(tower){ // TF auf Turm
-      const ht=46*s;top={x,y:gy-ht};
+      const ht=38*s;top={x,y:gy-ht};
       ox.fillStyle=steel;ox.fillRect(x-1.8*s,top.y,3.6*s,ht);
       ox.fillRect(x-7*s,gy-2*s,14*s,3*s);
       ox.fillRect(x-6*s,top.y+8*s,12*s,1.6*s); // Bühne
@@ -535,7 +536,7 @@ const Scene=(()=>{
       ox.fillStyle=steel;ox.fillRect(x-12*s,gy-3*s,24*s,2.4*s);ox.fillRect(x-1.6*s,top.y,3.2*s,12*s);
       ox.beginPath();ox.moveTo(x-8*s,gy-2*s);ox.lineTo(x,top.y+4*s);ox.lineTo(x+8*s,gy-2*s);ox.strokeStyle=steel;ox.lineWidth=1.4*s;ox.stroke();
     }
-    const ang=-.32,len=30*s,rad=10*s;
+    const len=30*s,rad=10*s;
     ox.save();ox.translate(top.x,top.y);ox.scale(dir,1);ox.rotate(ang);
     const body=ox.createLinearGradient(0,-rad,0,rad);
     const hi=mix([150,158,168],[248,250,252],dl),lo=mix([70,76,86],[170,178,188],dl);
@@ -549,7 +550,7 @@ const Scene=(()=>{
     return {nz,ang,dir,led:{x:top.x+(tower?-9*s*dir:0),y:tower?top.y+14*s:gy-6*s}};
   }
   function label(p,title,val,color,dl,align){
-    const s=Math.max(.8,S());ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;
+    const s=Math.max(.72,S()*1.15);ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;
     const tw1=ox.measureText(title).width;ox.font=`700 ${14*s}px "JetBrains Mono",monospace`;const tw2=val?ox.measureText(val).width:0;ox.font=`600 ${12*s}px "JetBrains Mono",monospace`;const w=Math.max(tw1,tw2)+18*s,h=(val?40:24)*s;
     const lx=Math.max(6,Math.min(W-w-6,p.x-w/2+(align||0))),ly=p.y-h;
     ox.fillStyle='rgba(7,17,29,.8)';ox.beginPath();ox.roundRect(lx,ly,w,h,7*s);ox.fill();
@@ -596,13 +597,14 @@ const Scene=(()=>{
     // Schneekanonen
     G.guns=[];
     STATIONS.forEach(st=>{const tw=DATA?DATA[st.id].mean[i]:null;
-      const gx=st.id==='tal'?(SX.tal-.105)*W:(SX.mittel-.09)*W;
+      const gx=st.id==='tal'?(SX.tal+.07)*W:(SX.mittel-.045)*W;
       const run=tw!=null&&tw<=START,marg=tw!=null&&!run&&tw<=MARGIN;
-      const g=gun(gx,st.id==='tal',dl,run,st.id==='tal'?-1:1);G.guns.push({...g,run,marg,tw});
+      const g=st.id==='tal'?gun(gx,true,dl,run,1,-.2):gun(gx,false,dl,run,-1,-.05);G.guns.push({...g,run,marg,tw});
     });
     // Schnee unter laufender Kanone (Kegel)
-    G.guns.forEach(g=>{if(!g.run)return;const gx=g.nz.x+g.dir*70*S(),gy=yOf(terrain(gx/W))+26*S();const r=ox.createRadialGradient(gx,gy,0,gx,gy,60*S());
-      r.addColorStop(0,'rgba(255,255,255,.55)');r.addColorStop(1,'rgba(255,255,255,0)');ox.fillStyle=r;ox.fillRect(gx-60*S(),gy-60*S(),120*S(),120*S())});
+    G.guns.forEach(g=>{if(!g.run)return;const gx=g.nz.x+g.dir*95*S(),gy=yOf(terrain(gx/W))+20*S();
+      ox.save();ox.translate(gx,gy);ox.scale(1,.28);const r=ox.createRadialGradient(0,0,0,0,0,70*S());
+      r.addColorStop(0,`rgba(255,255,255,${.25+.3*dl})`);r.addColorStop(1,'rgba(255,255,255,0)');ox.fillStyle=r;ox.beginPath();ox.arc(0,0,70*S(),0,7);ox.fill();ox.restore()});
     // Labels
     const valOf=tw=>tw==null?'–':(tw>0?'+':tw<0?'−':'')+Math.abs(tw).toFixed(1)+' °C · '+status(tw)[0];
     const colOf=tw=>tw==null?'#aab':tw<=START?'#8fd0ff':tw<=MARGIN?'#ffc94d':'#ff9c94';
@@ -629,17 +631,17 @@ const Scene=(()=>{
       cx.fillStyle=g.run?'#3ddc84':g.marg?'#ffb020':'#ff5a4f';cx.globalAlpha=g.run?1:.55+.45*Math.sin(t*3);
       cx.beginPath();cx.arc(g.led.x,g.led.y,2.4*s,0,7);cx.fill();cx.globalAlpha=1;
       if(reduce)return;
-      const rate=g.run?Math.min(14,4+(START-g.tw)*1.6):g.marg?(Math.random()<.08?2:0):0;
-      for(let k=0;k<rate;k++){const a=g.ang+(Math.random()-.5)*.28,v=(3+Math.random()*1.8)*s;
+      const rate=g.run?Math.min(12,3+(START-g.tw)*1.4):g.marg?(Math.random()<.08?2:0):0;
+      for(let k=0;k<rate;k++){const a=g.ang+(Math.random()-.5)*.3,v=(3.4+Math.random()*2)*s;
         parts.push({x:g.nz.x,y:g.nz.y,vx:g.dir*Math.cos(a)*v,vy:Math.sin(a)*v,life:0,max:110+Math.random()*90,r:(.8+Math.random()*1.3)*s})}
-      if(g.run&&Math.random()<.5)mist.push({x:g.nz.x+g.dir*20*s,y:g.nz.y-4*s,vx:g.dir*(1.2+Math.random())*s,vy:(-.3+Math.random()*.3)*s,life:0,max:160,r:8*s});
+      if(g.run&&Math.random()<.5)mist.push({x:g.nz.x+g.dir*24*s,y:g.nz.y,vx:g.dir*(1+Math.random()*.8)*s,vy:(.05+Math.random()*.2)*s,life:0,max:120,r:6*s});
     });
-    mist=mist.filter(m=>{m.life++;m.x+=m.vx;m.y+=m.vy;m.vy+=.004;m.r+=.22*s;const a=.09*(1-m.life/m.max);
+    mist=mist.filter(m=>{m.life++;m.x+=m.vx;m.y+=m.vy;m.vy+=.004;m.r+=.1*s;const a=(.03+.04*G.dl)*(1-m.life/m.max);
       cx.fillStyle=`rgba(240,246,255,${a})`;cx.beginPath();cx.arc(m.x,m.y,m.r,0,7);cx.fill();return m.life<m.max});
     cx.fillStyle='#fff';
-    parts=parts.filter(q=>{q.life++;q.vy+=.03*s;q.vx=q.vx*.985+.006*s;q.vy*=.99;q.x+=q.vx;q.y+=q.vy;
+    parts=parts.filter(q=>{q.life++;q.vy+=.03*s;q.vx*=.982;q.vy*=.99;q.x+=q.vx;q.y+=q.vy;
       cx.globalAlpha=Math.max(0,1-q.life/q.max)*.95;cx.beginPath();cx.arc(q.x,q.y,q.r,0,7);cx.fill();
-      return q.life<q.max&&q.y<yOf(terrain(Math.min(1,Math.max(0,q.x/W))))+34*s});
+      return q.life<q.max&&q.y<yOf(terrain(Math.min(1,Math.max(0,q.x/W))))+22*s});
     cx.globalAlpha=1;
     // Naturschnee
     if(!reduce&&G.snow>0)for(let k=0;k<Math.min(5,G.snow*5);k++)flakes.push({x:Math.random()*W,y:-4,v:(.5+Math.random()*.8)*s,w:Math.random()*6,r:(1+Math.random()*1.4)*s});
