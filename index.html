@@ -10,7 +10,7 @@
 <style>
 /* Layout: Bergszene als Hero, Messkorrektur-Leiste, Stationskarten mit Zeitleiste, Webcams, Diagramm, 30-Tage-Kalender. Alpines Nachtblau, Gletscher-Eis als Akzent. */
 :root{
-  --bg:#eef3f7; --surface:#ffffff; --fg:#0e1b2c; --muted:#5b6b7f; --line:#d8e1ea; --soft:#f4f7fa;
+  --bg:#eef3f7; --surface:#ffffff; --fg:#0e1b2c; --muted:#5b6b7f; --line:#d8e1ea; --soft:#f4f7fa; --go-bg:#e2f5e7; --go-line:#a6dcb5; --go-fg:#0f5a2a; --fc-bg:#eaf3fc; --fc-line:#c2dcf5;
   --ice:#1f7ae0; --ice2:#7cc4ff; --tal:#1f7ae0; --mittel:#e0631f;
   --ok:#1556a8; --good:#2f86d6; --mid:#8cc3f0; --warn:#f2b705; --no:#dfe6ed; --nofg:#5b6b7f; --red:#d0342c;
   --c0:#e6ebf0; --c1:#d6e7f6; --c2:#aed0ef; --c3:#73b0e4; --c4:#2f80cc; --c5:#0f4a8f; --hatch:rgba(255,255,255,.45);
@@ -19,12 +19,12 @@
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624;
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --fc-bg:#0e2238; --fc-line:#1f4468;
   --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
   --ok:#7cc0ff; --good:#4ea3ff; --mid:#2b5d8c; --warn:#d9a404; --no:#1a2b40; --nofg:#8fa3b8; --red:#ff5a4f;
   --c0:#14243a; --c1:#173252; --c2:#1d4673; --c3:#2563a0; --c4:#3b8ad6; --c5:#8cc8ff; --hatch:rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624;
+  --bg:#07111d; --surface:#0d1b2b; --fg:#e6eef7; --muted:#8fa3b8; --line:#1c2e44; --soft:#0a1624; --go-bg:#0e2a1b; --go-line:#22603b; --go-fg:#8fe3a8; --fc-bg:#0e2238; --fc-line:#1f4468;
   --ice:#4ea3ff; --ice2:#9fd6ff; --tal:#4ea3ff; --mittel:#ff8a4c;
   --ok:#7cc0ff; --good:#4ea3ff; --mid:#2b5d8c; --warn:#d9a404; --no:#1a2b40; --nofg:#8fa3b8; --red:#ff5a4f;
   --c0:#14243a; --c1:#173252; --c2:#1d4673; --c3:#2563a0; --c4:#3b8ad6; --c5:#8cc8ff; --hatch:rgba(0,0,0,.35); color-scheme:dark}
@@ -68,21 +68,27 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .card .name{font:700 21px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
 .card .alt{font:600 14px var(--mono);color:var(--muted)}
 .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle}
-.next{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--soft);border:1px solid var(--line)}
-.next .lbl{grid-column:1/-1;font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.next .big{font:800 clamp(30px,4.4vw,42px)/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
-.next .det{font-size:14px;color:var(--muted);line-height:1.35} .next .det b{color:var(--fg)}
-.next.none .big{font-size:26px;color:var(--muted)}
+.next{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;padding:16px 18px;border-radius:14px;background:var(--go-bg);border:1.5px solid var(--go-line)}
+.next .lbl{grid-column:1/-1;display:flex;align-items:center;gap:8px;font:700 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--go-fg)}
+.next .lbl svg{width:18px;height:18px;flex:none}
+.next .big{font:800 clamp(34px,5vw,48px)/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--go-fg)}
+.next .det{font-size:15px;line-height:1.4;color:var(--fg)} .next .det b{font-weight:700}
+.next .cd{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:99px;background:var(--go-fg);color:var(--go-bg);font:700 13px var(--body);white-space:nowrap}
+.next.none{background:var(--soft);border-color:var(--line)} .next.none .lbl,.next.none .big{color:var(--muted)} .next.none .big{font-size:26px}
+.divider{display:flex;align-items:center;gap:10px;font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.divider::after{content:"";flex:1;border-top:1px solid var(--line)}
 .tl svg{display:block;width:100%;height:auto}
 .tl .cap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.stat{display:grid;gap:2px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);min-width:0}
-.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
-.stat b{font:700 24px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat{display:grid;gap:3px;align-content:start;padding:11px 12px;border-radius:11px;border:1px solid var(--line);background:var(--surface);min-width:0}
+.stat.meas{background:var(--soft)} .stat.fc{background:var(--fc-bg);border-color:var(--fc-line)} .stat.cor{border-style:dashed}
+.stat .h{font:700 12px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--fg)}
+.stat .h2{font-size:12px;color:var(--muted);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat b{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
 .stat small{font-size:12px;color:var(--muted)}
 .pill{display:inline-block;padding:2px 10px;border-radius:99px;font:600 12px var(--body);white-space:nowrap;justify-self:start}
 .pill.p-ok{background:var(--ok);color:#fff}.pill.p-good{background:var(--good);color:#fff}.pill.p-mid{background:var(--mid);color:var(--fg)}.pill.p-warn{background:var(--warn);color:#1a1300}.pill.p-no{background:var(--no);color:var(--nofg)}
-.stat .pill{text-transform:none;letter-spacing:0;font-size:12px}
+.stat .pill{margin-top:2px}
 /* Webcams */
 .cams{display:grid;gap:18px}
 .cam{display:grid;gap:8px;min-width:0}
@@ -315,10 +321,11 @@ function renderCards(){
   document.getElementById('cards').innerHTML=STATIONS.map(s=>{
     const d=DATA[s.id];const w=windows(d);const next=w[0];
     const total=w.reduce((a,x)=>a+x.b-x.a+1,0);
-    const nextHtml=next?`<div class="next"><span class="lbl">Nächstes Beschneiungs-Fenster</span>
+    const flake='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7M9 4l3 2 3-2M9 20l3-2 3 2"/></svg>';
+    const nextHtml=next?`<div class="next"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span>
         <span class="big">${dLabel(d.time[next.a])}</span>
-        <span class="det"><b>${d.time[next.a].slice(11,16)} Uhr</b> · ${countdown(next.a)}<br>ca. <b>${next.b-next.a+1} h</b>, bis ${fmtT(next.min)} Feuchtkugel</span></div>`
-      :`<div class="next none"><span class="lbl">Nächstes Beschneiungs-Fenster</span><span class="big">keins in 15 Tagen</span><span class="det">Schau in den 30-Tage-Kalender unten.</span></div>`;
+        <span class="det">ab <b>${d.time[next.a].slice(11,16)} Uhr</b><span class="cd">${countdown(next.a)}</span><br>ca. <b>${next.b-next.a+1} h</b> lang, bis <b>${fmtT(next.min)}</b> Feuchtkugel</span></div>`
+      :`<div class="next none"><span class="lbl">${flake}Nächstes Beschneiungs-Fenster</span><span class="big">keins in 15 Tagen</span><span class="det">Schau in den 30-Tage-Kalender unten.</span></div>`;
     // Zeitleiste ab jetzt
     const N=d.time.length-NOW,W=600,cw=W/N;let tl=`<svg viewBox="0 0 ${W} 40" role="img" aria-label="Zeitleiste 15 Tage ${s.short}">`;
     for(let k=0;k<N;k++){const v=d.mean[NOW+k];const c=['--no','--warn','--mid','--good','--ok'][status(v)[2]];
@@ -334,10 +341,11 @@ function renderCards(){
       <div class="top"><span class="name"><span class="swatch" style="background:var(${s.color})"></span>${s.name}</span><span class="alt">${s.alt.toLocaleString('de-CH')} m</span></div>
       ${nextHtml}
       <div class="tl"><div class="cap"><span>Die nächsten 15 Tage, stündlich</span><span>${total} h Beschneiung möglich</span></div>${tl}</div>
+      <div class="divider">Details</div>
       <div class="stats">
-        <div class="stat"><span>Gemessen ${m?m.t.slice(11,16):''}</span><b>${fmtT(m?.tw)}</b><small>Luft ${fmtT(m?.temp)} · ${m?Math.round(m.rh)+' %':'–'}</small><span class="pill ${stM[1]}">${stM[0]}</span></div>
-        <div class="stat"><span>Prognose ${d.time[sel].slice(11,16)}</span><b>${fmtT(d.mean[sel])}</b><small>Luft ${fmtT(d.temp[sel])}</small><span class="pill ${stSel[1]}">${stSel[0]}</span></div>
-        <div class="stat"><span>Korrektur</span><b>${CORR&&d.biasN>=4?fmtD(d.biasTw):'aus'}</b><small>${d.biasN>=4?'aus '+d.biasN+' Messstunden':'zu wenig Messwerte'}</small></div>
+        <div class="stat meas"><span class="h">Gemessen jetzt</span><span class="h2">Webcam · ${m?m.t.slice(11,16)+' Uhr':'–'}</span><b>${fmtT(m?.tw)}</b><small>Luft ${fmtT(m?.temp)} · ${m?Math.round(m.rh)+' %':'–'}</small><span class="pill ${stM[1]}">${stM[0]}</span></div>
+        <div class="stat fc"><span class="h">Prognose</span><span class="h2">${(t=>{const x=new Date(t);return DAYS[x.getDay()]+' '+x.getDate()+'.'+(x.getMonth()+1)+'., '+t.slice(11,16)})(d.time[sel])} · Zeitregler</span><b>${fmtT(d.mean[sel])}</b><small>Luft ${fmtT(d.temp[sel])}</small><span class="pill ${stSel[1]}">${stSel[0]}</span></div>
+        <div class="stat cor"><span class="h">Korrektur</span><span class="h2">Schnitt letzte 24 h</span><b>${CORR&&d.biasN>=4?fmtD(d.biasTw):'aus'}</b><small>${d.biasN>=4?d.biasN+' Messstunden':'zu wenig Messwerte'}</small></div>
       </div></div>`}).join('');
 }
 let camPan=[];
