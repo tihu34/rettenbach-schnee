@@ -40,8 +40,8 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .stamp{font:13px var(--mono);color:var(--muted)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
 /* Hero */
-.scene{position:relative;border-radius:18px;overflow:hidden;background:#0b1626;aspect-ratio:16/7;max-width:100%}
-.scene canvas{display:block;width:100%;height:100%}
+.scene{position:relative;contain:strict;isolation:isolate;border-radius:18px;overflow:hidden;background:#0b1626;aspect-ratio:16/7;max-width:100%}
+.scene canvas{display:block;width:100%;height:100%;will-change:transform}
 .scene .hud{position:absolute;left:14px;top:12px;font:600 13px var(--mono);color:#e6eef7;background:#0008;padding:6px 10px;border-radius:8px}
 .slider{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-top:12px}
 .slider input{width:100%;accent-color:var(--ice)}
@@ -74,6 +74,14 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
 .calwrap{overflow-x:auto}
 .scale{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
 .scale i{display:inline-block;width:26px;height:12px;border-radius:3px}
+.cams{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.cam{display:grid;gap:8px;min-width:0}
+.cam .strip{display:block;contain:paint;overflow-x:auto;border-radius:12px;background:#0b1626;scrollbar-width:thin}
+.cam .strip img{display:block;height:200px;max-width:none;width:auto}
+.cam .meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px}
+.cam a.live{font-weight:600;color:var(--ice);text-decoration:none}.cam a.live:hover{text-decoration:underline}
+.meas{font-size:14px;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line)}
+.meas b{font-variant-numeric:tabular-nums}
 .note{color:var(--muted);font-size:14px}.note p{max-width:80ch}
 .note b{color:var(--fg)}
 .err{color:var(--red);font-weight:600}
@@ -103,8 +111,14 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
   <section class="cards" id="cards"></section>
 
   <section class="panel">
-    <h2>Feuchtkugeltemperatur · 16 Tage</h2>
-    <p class="sub">Mittel aus ECMWF, ICON und GFS. Die Fläche zeigt die Spannweite des ECMWF-Ensembles (10–90 %). Unter der roten Linie können die Kanonen laufen.</p>
+    <h2>Webcams live</h2>
+    <p class="sub">360°-Panorama, seitlich wischen oder scrollen. Klick auf das Bild öffnet die Live-Ansicht bei Panomax.</p>
+    <div class="cams" id="cams"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Feuchtkugeltemperatur · Messung + 16 Tage Prognose</h2>
+    <p class="sub">Mittel aus ECMWF, ICON und GFS. Die Fläche zeigt die Spannweite des ECMWF-Ensembles (10–90 %). Punkte = gemessen an den Webcams (letzte 2 Tage), zum Vergleich mit der Prognose. Unter der roten Linie können die Kanonen laufen.</p>
     <div class="legend" id="legend"></div>
     <div class="chartbox" id="chart"></div>
   </section>
@@ -119,14 +133,14 @@ h2{font:700 22px/1.2 var(--display);text-transform:uppercase;letter-spacing:.03e
   <section class="panel note">
     <h2 style="color:var(--fg)">So liest du das</h2>
     <p>Schneekanonen hängen an der <b>Feuchtkugeltemperatur</b>, nicht an der Lufttemperatur. Sie kombiniert Temperatur und Luftfeuchte: Trockene Luft kühlt den Wassertropfen durch Verdunstung, deshalb geht es bei trockener Luft schon knapp unter 0 °C. TechnoAlpin-Propellermaschinen (TF auf Türmen, TR am Boden) starten ab etwa <b>−2 bis −2,5 °C</b>, laufen gut ab <b>−4 °C</b> und optimal unter <b>−7 °C</b>.</p>
-    <p>Standorte: Rettenbachferner Talstation ca. 2'680 m und Schwarze Schneide Mittelstation ca. 3'000 m (Höhen angenommen). Die Modelle werden auf diese Höhe umgerechnet. Die Feuchtkugel wird mit dem tatsächlichen Luftdruck in der Höhe berechnet. Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Ob tatsächlich beschneit wird, entscheiden die Bergbahnen (Wasser, Bedarf, Weltcup-Vorbereitung). Live-Bild: <a href="https://soelden.panomax.com/rettenbach" target="_blank" rel="noopener">Panomax Rettenbach</a>.</p>
+    <p>Standorte: Rettenbachferner Talstation ca. 2'680 m und Schwarze Schneide Mittelstation ca. 3'000 m (Höhen angenommen). Die Modelle werden auf diese Höhe umgerechnet. Die Feuchtkugel wird mit dem tatsächlichen Luftdruck in der Höhe berechnet. Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Ob tatsächlich beschneit wird, entscheiden die Bergbahnen (Wasser, Bedarf, Weltcup-Vorbereitung). Messwerte: Wetterstationen der <a href="https://soelden.panomax.com/rettenbach" target="_blank" rel="noopener">Panomax-Webcams Rettenbach</a> und <a href="https://soelden.panomax.com/schwarzeschneid" target="_blank" rel="noopener">Schwarze Schneid</a>. Die Rettenbach-Station meldet stündlich ganze Grad, die Schwarze Schneid alle ~12 Minuten auf 0,1 °C. Die genaue Höhe der Sensoren ist nicht angegeben; die Schwarze-Schneid-Kamera steht vermutlich höher als die Mittelstation.</p>
   </section>
 </div>
 
 <script>
 const STATIONS=[
-  {id:'tal',name:'Rettenbach Talstation',short:'Talstation',alt:2680,lat:46.9375,lon:10.9290,color:'--tal',gun:'Turm'},
-  {id:'mittel',name:'Schwarze Schneide Mittelstation',short:'Mittelstation',alt:3000,lat:46.9300,lon:10.9180,color:'--mittel',gun:'Boden'},
+  {id:'tal',name:'Rettenbach Talstation',short:'Talstation',alt:2680,lat:46.9375,lon:10.9290,color:'--tal',gun:'Turm',cam:196,camUrl:'https://soelden.panomax.com/rettenbach',camName:'Rettenbachgletscher'},
+  {id:'mittel',name:'Schwarze Schneide Mittelstation',short:'Mittelstation',alt:3000,lat:46.9300,lon:10.9180,color:'--mittel',gun:'Boden',cam:216,camUrl:'https://soelden.panomax.com/schwarzeschneid',camName:'Schwarze Schneid'},
 ];
 const DET=[['ecmwf_ifs025','ECMWF'],['icon_seamless','ICON'],['gfs_seamless','GFS']];
 const START=-2.5, MARGIN=-2, GOOD=-4, OPT=-7;
@@ -160,10 +174,14 @@ async function load(){
     const out={};
     await Promise.all(STATIONS.map(async s=>{
       const p=pAt(s.alt);
-      const [det,ecm,gfs]=await Promise.all([
-        getJSON(`https://api.open-meteo.com/v1/forecast?${base(s)}&hourly=temperature_2m,relative_humidity_2m,snowfall&forecast_days=16&models=${DET.map(d=>d[0]).join(',')}`),
+      const ymd=d=>d.toLocaleDateString('sv-SE',{timeZone:'Europe/Vienna'});
+      const meas=fetch(`https://api.panomax.com/1.0/cams/${s.cam}/weather/data?startDate=${ymd(new Date(Date.now()-2*864e5))}&endDate=${ymd(new Date(Date.now()+864e5))}`)
+        .then(r=>r.json()).then(j=>(j.weatherData||[]).filter(x=>x.tempC!=null).map(x=>({t:x.date+'T'+x.time.slice(0,5),temp:x.tempC,rh:x.humidityPc,tw:wetbulb(x.tempC,x.humidityPc,p)}))).catch(()=>[]);
+      const [det,ecm,gfs,ms]=await Promise.all([
+        getJSON(`https://api.open-meteo.com/v1/forecast?${base(s)}&hourly=temperature_2m,relative_humidity_2m,snowfall&forecast_days=16&past_days=2&models=${DET.map(d=>d[0]).join(',')}`),
         getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=15&models=ecmwf_ifs025`),
         getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base(s)}&hourly=temperature_2m,relative_humidity_2m&forecast_days=35&models=gfs05`),
+        meas,
       ]);
       const h=det.hourly, n=h.time.length;
       const tw={},temp=[],mean=[],snow=[];
@@ -178,14 +196,14 @@ async function load(){
       }
       const ens=j=>{const H=j.hourly;const mem=Object.keys(H).filter(k=>k.startsWith('temperature_2m'));
         return {time:H.time,members:mem.map(k=>{const rk=k.replace('temperature','relative_humidity');return H.time.map((_,i)=>wetbulb(H[k][i],H[rk]?.[i],p))})}};
-      out[s.id]={time:h.time,tw,mean,temp,snow,ecm:ens(ecm),gfs:ens(gfs)};
+      out[s.id]={time:h.time,tw,mean,temp,snow,ecm:ens(ecm),gfs:ens(gfs),meas:ms};
     }));
     DATA=out;
     const now=new Date();
     document.getElementById('stamp').textContent='Stand '+now.toLocaleString('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     const tt=DATA.tal.time; const nowIdx=Math.max(0,tt.findIndex(t=>new Date(t)>=new Date(now.getTime()-3600e3)));
     const sl=document.getElementById('time');sl.max=tt.length-1;sl.value=nowIdx;
-    render();
+    renderCams();render();
   }catch(e){
     document.getElementById('stamp').innerHTML='<span class="err">Daten konnten nicht geladen werden. Bitte nochmals «Aktualisieren» drücken.</span>';
   }
@@ -235,7 +253,23 @@ function renderCards(){
     else txt='In den nächsten 16 Tagen <b>kein</b> sicheres Fenster im Modellmittel. Schau in den 35-Tage-Kalender.';
     return `<div class="panel card"><div class="top"><span class="name"><span class="swatch" style="background:var(${s.color})"></span>${s.name}</span><span class="alt">${s.alt.toLocaleString('de-CH')} m</span></div>
       <div class="now"><div><b>${fmtT(d.mean[i])}</b><span>Feuchtkugel</span></div><div><b>${fmtT(d.temp[i])}</b><span>Luft</span></div><div style="align-self:center"><span class="pill ${st[1]}">${st[0]}</span></div></div>
-      <div class="verdict">${txt}</div></div>`}).join('');
+      <div class="verdict">${txt}</div>${measBlock(s,d)}</div>`}).join('');
+}
+function measBlock(s,d){
+  const m=d.meas;if(!m||!m.length)return `<div class="meas">Webcam-Messung ${s.camName}: zurzeit keine Daten.</div>`;
+  const last=m[m.length-1];
+  // Abweichung Prognose vs. Messung über die letzten 24 h
+  const diffs=[];m.forEach(x=>{const k=d.time.indexOf(x.t.slice(0,13)+':00');if(k>=0&&d.temp[k]!=null&&Date.now()-new Date(x.t)<864e5)diffs.push(x.temp-d.temp[k])});
+  const bias=diffs.length?diffs.reduce((a,b)=>a+b)/diffs.length:null;
+  const st=status(last.tw);
+  return `<div class="meas">📡 <b>Gemessen</b> an der Webcam ${s.camName} um ${last.t.slice(11,16)}: Luft <b>${fmtT(last.temp)}</b>, Feuchte <b>${Math.round(last.rh)} %</b>, Feuchtkugel <b>${fmtT(last.tw)}</b> <span class="pill ${st[1]}">${st[0]}</span>`+
+    (bias!=null?`<br>Die Prognose lag in den letzten 24 h im Schnitt <b>${Math.abs(bias).toFixed(1).replace('.',',')} °C ${bias>0?'zu kalt':'zu warm'}</b> im Vergleich zur Messung.`:'')+`</div>`;
+}
+function renderCams(){
+  const bust=Math.floor(Date.now()/60000);
+  document.getElementById('cams').innerHTML=STATIONS.map(s=>{const m=DATA?.[s.id]?.meas;const last=m&&m.length?m[m.length-1]:null;
+    return `<div class="cam"><a class="strip" href="${s.camUrl}" target="_blank" rel="noopener" aria-label="Live-Webcam ${s.camName} öffnen"><img src="https://panodata.panomax.com/cams/${s.cam}/recent_default.jpg?x=${bust}" alt="360°-Panorama Webcam ${s.camName}" loading="lazy" decoding="async" onload="this.parentNode.scrollLeft=(this.width-this.parentNode.clientWidth)/2"></a>
+    <div class="meta"><span><span class="swatch" style="background:var(${s.color})"></span><b>${s.camName}</b>${last?` · ${fmtT(last.temp)} um ${last.t.slice(11,16)}`:''}</span><a class="live" href="${s.camUrl}" target="_blank" rel="noopener">Live-Ansicht öffnen ↗</a></div></div>`}).join('');
 }
 function renderChart(){
   const W=1100,H=420,L=50,R=16,T=14,B=46,ymin=-14,ymax=8;
@@ -257,6 +291,8 @@ function renderChart(){
     if(xs.length){let p='M'+xs.map((x,i)=>x.toFixed(1)+','+hi[i].toFixed(1)).join('L');p+='L'+xs.map((x,i)=>x.toFixed(1)+','+lo[i].toFixed(1)).reverse().join('L')+'Z';
       s+=`<path d="${p}" fill="var(${st.color})" opacity=".13"/>`}});
   STATIONS.forEach(st=>s+=`<path d="${path(DATA[st.id].mean)}" fill="none" stroke="var(${st.color})" stroke-width="2.4" stroke-linejoin="round"/>`);
+  STATIONS.forEach(st=>{(DATA[st.id].meas||[]).forEach(m=>{const k=idxOf(m.t);if(k<0||k>n-1||m.tw==null)return;
+    s+=`<circle cx="${X(k).toFixed(1)}" cy="${Y(m.tw).toFixed(1)}" r="2.4" fill="var(--surface)" stroke="var(${st.color})" stroke-width="1.4"/>`})});
   s+=`<line x1="${L}" x2="${W-R}" y1="${Y(START)}" y2="${Y(START)}" stroke="var(--red)" stroke-width="2" stroke-dasharray="7 5"/>`;
   s+=`<text x="${W-R-6}" y="${Y(START)-6}" text-anchor="end" font-size="12" font-weight="600" fill="var(--red)">Startgrenze −2,5 °C</text>`;
   [[ (OPT+ymin)/2,'optimal'],[(OPT+GOOD)/2,'gut'],[(GOOD+START)/2,'Start']].forEach(([v,l])=>s+=`<text x="${L+6}" y="${Y(v)+4}" font-size="11" fill="var(--muted)">${l}</text>`);
@@ -264,18 +300,18 @@ function renderChart(){
   s+=`<line id="cursor" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="var(--fg)" stroke-width="1.5" opacity=".6"/>`;
   s+='</svg>';
   document.getElementById('chart').innerHTML=s;
-  document.getElementById('legend').innerHTML=STATIONS.map(st=>`<span><i style="background:var(${st.color})"></i>${st.short} ${st.alt} m</span>`).join('')+'<span><i style="background:var(--red)"></i>Startgrenze</span>';
+  document.getElementById('legend').innerHTML=STATIONS.map(st=>`<span><i style="background:var(${st.color})"></i>${st.short} ${st.alt} m</span>`).join('')+'<span><i style="background:var(--surface);border:1.5px solid var(--muted);width:8px;height:8px;border-radius:50%"></i>Messung Webcam</span><span><i style="background:var(--red)"></i>Startgrenze</span>';
   renderChart.X=X;
 }
 function renderCal(){
-  const first=new Date(DATA.tal.time[0].slice(0,10));
+  const first=new Date(new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Vienna'}));
   const days=[...Array(35)].map((_,k)=>{const d=new Date(first);d.setDate(d.getDate()+k);return d});
   const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   let h='<div></div>'+days.map((d,k)=>`<div class="d ${[0,6].includes(d.getDay())?'we':''}">${DAYS[d.getDay()]}<br>${d.getDate()}.${(k===0||d.getDate()===1)?'<br>'+['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][d.getMonth()]:''}</div>`).join('');
   STATIONS.forEach(st=>{
     const pe=dailyProb(DATA[st.id].ecm),pg=dailyProb(DATA[st.id].gfs);
     h+=`<div class="lab"><span class="swatch" style="background:var(${st.color})"></span>${st.short}</div>`;
-    days.forEach((d,k)=>{const kk=key(d);const p=k<14&&pe[kk]!=null?pe[kk]:pg[kk];
+    days.forEach((d,k)=>{const kk=key(d);const p=k<15&&pe[kk]!=null?pe[kk]:pg[kk];
       if(p==null){h+='<div class="c" style="background:var(--bg)">·</div>';return}
       const c=p>=.6?'--ok':p>=.3?'--mid':p>0?'--warn':'--no';
       const fg=p>=.6?'#fff':'var(--fg)';
@@ -288,6 +324,7 @@ function updateTime(){
   document.getElementById('tlabel').textContent=dLabel(t)+' '+t.slice(11,16);
   const c=document.getElementById('cursor');if(c&&renderChart.X){c.setAttribute('x1',renderChart.X(i));c.setAttribute('x2',renderChart.X(i))}
   renderCards();
+  if(frame.idle){frame.idle=false;requestAnimationFrame(frame)}
   document.getElementById('hud').textContent=dLabel(t)+' '+t.slice(11,16)+' Uhr';
 }
 document.getElementById('time').addEventListener('input',updateTime);
@@ -373,9 +410,11 @@ function frame(ts){
   const sf=DATA?DATA.tal.snow[i]:0;
   if(!reduce&&sf>0){for(let k=0;k<Math.min(6,sf*4);k++)flakes.push({x:Math.random()*Wc,y:-5,v:.6+Math.random()*.8,w:Math.random()*6})}
   cx.fillStyle='rgba(255,255,255,.85)';flakes=flakes.filter(fl=>{fl.y+=fl.v;fl.x+=Math.sin((fl.y+fl.w*30)/30)*.4;cx.beginPath();cx.arc(fl.x,fl.y,1.8,0,7);cx.fill();return fl.y<Hc});
-  if(!reduce||!frame.once){requestAnimationFrame(frame)}
   frame.once=true;
+  if(!reduce&&sceneVisible)requestAnimationFrame(frame);else frame.idle=true;
 }
+let sceneVisible=true;
+new IntersectionObserver(es=>{sceneVisible=es[0].isIntersecting;if(sceneVisible&&frame.idle){frame.idle=false;requestAnimationFrame(frame)}}).observe(cv);
 resize();requestAnimationFrame(frame);
 load();
 </script>
