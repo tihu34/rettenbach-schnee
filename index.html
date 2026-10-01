@@ -603,8 +603,14 @@ const Scene=(()=>{
     ox.fillStyle=sky;ox.fillRect(0,0,W,H);
     if(dl<.5){const a=1-dl*2;const st=vnoise(42);for(let k=0;k<140;k++){const x=st(k*3.1)*W,y=st(k*7.7+1)*H*.55,r=st(k*1.3+5)*1.2+.25;
       ox.fillStyle=`rgba(255,255,255,${(.35+st(k*2.2)*.6)*a})`;ox.beginPath();ox.arc(x,y,r,0,7);ox.fill()}
-      ox.fillStyle=`rgba(245,240,220,${.9*a})`;ox.beginPath();ox.arc(W*.14,H*.16,10*S(),0,7);ox.fill();
-      ox.fillStyle=rgb(mix([5,10,24],[52,118,204],dl));ox.beginPath();ox.arc(W*.14+5*S(),H*.16-3*S(),9*S(),0,7);ox.fill()}
+      // Mond wandert von 18 Uhr (links) über Mitternacht (oben) bis 7 Uhr (rechts)
+      const p=((hour-18+24)%24)/13;
+      if(p<=1){const mx=W*(.08+.84*p),my=H*(.42-.32*Math.sin(p*Math.PI)),mr=Math.max(7,11*S());
+        const glow=ox.createRadialGradient(mx,my,0,mx,my,mr*4);glow.addColorStop(0,`rgba(230,235,255,${.18*a})`);glow.addColorStop(1,'rgba(230,235,255,0)');
+        ox.fillStyle=glow;ox.fillRect(mx-mr*4,my-mr*4,mr*8,mr*8);
+        ox.save();ox.beginPath();ox.arc(mx,my,mr,0,7);ox.clip();
+        ox.fillStyle=`rgba(245,240,220,${.95*a})`;ox.fillRect(mx-mr,my-mr,mr*2,mr*2);
+        ox.fillStyle=sky;ox.beginPath();ox.arc(mx+mr*.5,my-mr*.3,mr*.9,0,7);ox.fill();ox.restore()}}
     else{const sx=W*(.1+.8*((hour-6)/13)),sy=H*(.42-.3*dl);const g=ox.createRadialGradient(sx,sy,0,sx,sy,90*S());
       g.addColorStop(0,'rgba(255,248,220,.95)');g.addColorStop(.12,'rgba(255,240,200,.6)');g.addColorStop(1,'rgba(255,240,200,0)');ox.fillStyle=g;ox.fillRect(0,0,W,H)}
     // Bergketten
